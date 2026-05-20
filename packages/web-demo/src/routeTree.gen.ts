@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PlasmaRouteImport } from './routes/plasma'
 import { Route as MatrixRouteImport } from './routes/matrix'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CounterRouteImport } from './routes/counter'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -22,6 +23,11 @@ const PlasmaRoute = PlasmaRouteImport.update({
 const MatrixRoute = MatrixRouteImport.update({
   id: '/matrix',
   path: '/matrix',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CounterRoute = CounterRouteImport.update({
@@ -38,12 +44,14 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/counter': typeof CounterRoute
+  '/dashboard': typeof DashboardRoute
   '/matrix': typeof MatrixRoute
   '/plasma': typeof PlasmaRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/counter': typeof CounterRoute
+  '/dashboard': typeof DashboardRoute
   '/matrix': typeof MatrixRoute
   '/plasma': typeof PlasmaRoute
 }
@@ -51,20 +59,22 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/counter': typeof CounterRoute
+  '/dashboard': typeof DashboardRoute
   '/matrix': typeof MatrixRoute
   '/plasma': typeof PlasmaRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/counter' | '/matrix' | '/plasma'
+  fullPaths: '/' | '/counter' | '/dashboard' | '/matrix' | '/plasma'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/counter' | '/matrix' | '/plasma'
-  id: '__root__' | '/' | '/counter' | '/matrix' | '/plasma'
+  to: '/' | '/counter' | '/dashboard' | '/matrix' | '/plasma'
+  id: '__root__' | '/' | '/counter' | '/dashboard' | '/matrix' | '/plasma'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CounterRoute: typeof CounterRoute
+  DashboardRoute: typeof DashboardRoute
   MatrixRoute: typeof MatrixRoute
   PlasmaRoute: typeof PlasmaRoute
 }
@@ -83,6 +93,13 @@ declare module '@tanstack/react-router' {
       path: '/matrix'
       fullPath: '/matrix'
       preLoaderRoute: typeof MatrixRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/counter': {
@@ -105,6 +122,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CounterRoute: CounterRoute,
+  DashboardRoute: DashboardRoute,
   MatrixRoute: MatrixRoute,
   PlasmaRoute: PlasmaRoute,
 }

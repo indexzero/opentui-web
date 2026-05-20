@@ -6,6 +6,7 @@ const TABS = [
   { to: '/plasma', label: 'plasma' },
   { to: '/matrix', label: 'matrix' },
   { to: '/counter', label: 'counter' },
+  { to: '/dashboard', label: 'dashboard' },
 ] as const
 
 export const Route = createRootRoute({ component: RootComponent })
