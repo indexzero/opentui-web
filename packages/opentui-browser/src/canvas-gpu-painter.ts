@@ -24,7 +24,9 @@ struct Uniforms {
   cellSize: vec2f,
   resolution: vec2f,
   atlasGrid: vec2f,
-  pad0: vec2f,
+  // UV inset in texture-space (half a texel along each atlas axis) so that
+  // linear sampling at the cell boundary doesn't bleed into the neighbor.
+  atlasInset: vec2f,
 };
 
 @group(0) @binding(0) var<uniform> U: Uniforms;
@@ -48,7 +50,11 @@ fn vs_main(
   let idx = max(glyph, 0.0);
   let gx = idx - floor(idx / U.atlasGrid.x) * U.atlasGrid.x;
   let gy = floor(idx / U.atlasGrid.x);
-  out.uv = (vec2f(gx, gy) + quad) / U.atlasGrid;
+  // Inset the [0,1] quad coords slightly so the resulting UV never lands on
+  // the exact cell boundary (where linear sampling would pull in the
+  // adjacent glyph's pixels).
+  let insetQuad = mix(U.atlasInset, vec2f(1.0) - U.atlasInset, quad);
+  out.uv = (vec2f(gx, gy) + insetQuad) / U.atlasGrid;
   out.fg = fg;
   out.bg = bg;
   out.glyph = glyph;
@@ -57,9 +63,10 @@ fn vs_main(
 
 @fragment
 fn fs_main(in: VsOut) -> @location(0) vec4f {
-  // textureSample must be called from uniform control flow — i.e. before
-  // any branch on per-fragment data. Sample first, branch second.
-  let a = textureSample(atlas, samp, in.uv).a;
+  // textureSampleLevel skips derivative-based mip selection — we have only
+  // a single mip level, and the explicit LOD avoids edge wobble that some
+  // WebGPU backends exhibit with textureSample on a single-LOD texture.
+  let a = textureSampleLevel(atlas, samp, in.uv, 0.0).a;
   if (in.glyph < 0.0) { return in.bg; }
   return mix(in.bg, in.fg, a);
 }
@@ -332,6 +339,12 @@ export class CanvasGPUPainter {
 
     this.device.queue.writeBuffer(this.instanceBuffer, 0, data.buffer, 0, cellCount * 48)
 
+    // Inset half a texel along each cell to avoid edge bleed under linear
+    // sampling. cellPxW/H are post-dpr atlas pixels per cell, so half-pixel
+    // = 0.5 / (atlasCols * cellPxW) in normalized U coords (then *atlasCols
+    // because the UV math multiplies by atlasGrid).
+    const insetU = 0.5 / (this.atlas.cellPxW * this.dpr)
+    const insetV = 0.5 / (this.atlas.cellPxH * this.dpr)
     const uniforms = new Float32Array(8)
     uniforms[0] = this.cellWidth * this.dpr
     uniforms[1] = this.cellHeight * this.dpr
@@ -339,6 +352,8 @@ export class CanvasGPUPainter {
     uniforms[3] = this.canvas.height
     uniforms[4] = this.atlas.cols
     uniforms[5] = this.atlas.rows
+    uniforms[6] = insetU
+    uniforms[7] = insetV
     this.device.queue.writeBuffer(this.uniformBuffer, 0, uniforms.buffer)
 
     const encoder = this.device.createCommandEncoder()
