@@ -16,6 +16,7 @@
 // ghostty-web.
 
 import type { OpentuiBuffer } from './buffer'
+import type { CellGrid } from './cell-grid'
 
 const ATTR_BOLD = 1 << 0
 const ATTR_ITALIC = 1 << 2
@@ -48,6 +49,9 @@ export class CanvasPainter {
     this.ctx = ctx
     this.measureCell()
   }
+
+  // Symmetry with the GL/GPU painters — nothing to release for 2d canvas.
+  dispose() {}
 
   private measureCell() {
     this.ctx.font = `${this.fontSize}px ${this.fontFamily}`
@@ -82,9 +86,10 @@ export class CanvasPainter {
     this.ctx.textBaseline = 'top'
   }
 
-  // Paint a full frame from the buffer.
-  paint(buf: OpentuiBuffer) {
-    const { width, height, chars, fg, bg, attrs } = buf.snapshot()
+  // Paint a full frame from the buffer or from a pre-snapshotted CellGrid
+  // (the worker path hands us the latter).
+  paint(input: OpentuiBuffer | CellGrid) {
+    const { width, height, chars, fg, bg, attrs } = 'snapshot' in input ? input.snapshot() : input
     if (width !== this.cols || height !== this.rows) {
       // Caller is supposed to keep these in sync, but be defensive.
       this.resize(width, height)

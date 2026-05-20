@@ -12,13 +12,16 @@ import { FitAddon as XtermFitAddon } from '@xterm/addon-fit'
 import { WebglAddon } from '@xterm/addon-webgl'
 import '@xterm/xterm/css/xterm.css'
 import {
+  CanvasGLPainter,
+  CanvasGPUPainter,
   CanvasPainter,
   OpentuiBuffer,
   encodeBufferAsAnsi,
   encodeBufferAsAnsiDiff,
+  gridFromMessage,
   loadOpentui,
 } from 'opentui-browser'
-import type { OpentuiExports } from 'opentui-browser'
+import type { CellGrid, OpentuiExports } from 'opentui-browser'
 
 export type DrawKernel = (buf: OpentuiBuffer, t: number, frame: number, opentui: OpentuiExports) => void
 export type EncoderMode = 'full' | 'diff'
@@ -531,6 +534,395 @@ export function CanvasVariant({ draw, onInput }: DrawProps) {
   }, [])
 
   return <VariantFrame hostRef={hostRef} status={status} fps={fps} error={error} detail={`direct canvas · no terminal emulator · ${cellInfo}`} />
+}
+
+// ---- canvas + worker -----------------------------------------------------
+
+type CanvasWorkerKind = '2d' | 'gl' | 'gpu'
+
+interface CanvasWorkerProps {
+  workerFactory: () => Worker
+  kind: CanvasWorkerKind
+  forwardInput?: boolean
+}
+
+function CanvasWorkerVariantInner({ workerFactory, kind, forwardInput }: CanvasWorkerProps) {
+  const hostRef = useRef<HTMLDivElement>(null)
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
+  const [error, setError] = useState<string | null>(null)
+  const [fps, setFps] = useState(0)
+  const [computeMs, setComputeMs] = useState(0)
+  const [cellInfo, setCellInfo] = useState('')
+
+  useEffect(() => {
+    let canvas: HTMLCanvasElement | undefined
+    let painter: CanvasPainter | CanvasGLPainter | CanvasGPUPainter | undefined
+    let worker: Worker | undefined
+    let ro: ResizeObserver | undefined
+    let keyHandler: ((e: KeyboardEvent) => void) | undefined
+    let resizeTimeout = 0
+    let rafId = 0
+    let disposed = false
+    let workerReady = false
+    let nextSeq = 0, inflight = 0
+    let lastSecond = performance.now(), framesThisSecond = 0, lastComputeMs = 0
+
+    function syncSize() {
+      if (!painter || !hostRef.current || !worker) return
+      const rect = hostRef.current.getBoundingClientRect()
+      const { cols, rows } = painter.fit(rect.width, rect.height)
+      painter.resize(cols, rows)
+      setCellInfo(`${cols}x${rows}`)
+      worker.postMessage({ type: 'resize', cols, rows })
+    }
+
+    canvas = document.createElement('canvas')
+    canvas.style.display = 'block'
+    if (!hostRef.current) return
+    hostRef.current.appendChild(canvas)
+
+    const setupPainter = async (): Promise<CanvasPainter | CanvasGLPainter | CanvasGPUPainter> => {
+      if (kind === 'gpu') {
+        const p = new CanvasGPUPainter(canvas!, { fontSize: 13 })
+        await p.init()
+        return p
+      }
+      if (kind === 'gl') return new CanvasGLPainter(canvas!, { fontSize: 13 })
+      return new CanvasPainter(canvas!, { fontSize: 13 })
+    }
+    const proceed = () => {
+      if (!painter || !hostRef.current || !canvas) return
+    worker = workerFactory()
+    worker.onerror = (ev) => { setError(`worker ${ev.message ?? ''}`); setStatus('error') }
+    worker.onmessage = (e: MessageEvent) => {
+      const m = e.data
+      if (m.type === 'ready') {
+        workerReady = true
+        syncSize()
+      } else if (m.type === 'frame' && m.mode === 'cells') {
+        inflight = Math.max(0, inflight - 1)
+        if (!painter || disposed) return
+        try {
+          const grid: CellGrid = gridFromMessage(m.cells)
+          painter.paint(grid)
+        } catch (err) {
+          setError(err instanceof Error ? err.message : String(err)); setStatus('error'); return
+        }
+        lastComputeMs = m.computeMs
+        framesThisSecond++
+        const now = performance.now()
+        if (now - lastSecond >= 1000) {
+          setFps(framesThisSecond)
+          setComputeMs(Math.round(lastComputeMs * 10) / 10)
+          framesThisSecond = 0
+          lastSecond = now
+        }
+      } else if (m.type === 'error') {
+        setError(m.message); setStatus('error')
+      }
+    }
+    worker.postMessage({ type: 'init', outputMode: 'cells' })
+
+    if (forwardInput) {
+      canvas.tabIndex = 0
+      canvas.style.outline = 'none'
+      canvas.focus()
+      keyHandler = (e: KeyboardEvent) => {
+        if (document.activeElement !== canvas) return
+        const bytes = keyEventToBytes(e)
+        if (bytes !== null) {
+          e.preventDefault()
+          worker?.postMessage({ type: 'input', data: bytes })
+        }
+      }
+      window.addEventListener('keydown', keyHandler)
+    }
+
+    ro = new ResizeObserver(() => {
+      if (resizeTimeout) window.clearTimeout(resizeTimeout)
+      resizeTimeout = window.setTimeout(() => { resizeTimeout = 0; syncSize() }, 120)
+    })
+    ro.observe(hostRef.current)
+    setError(null); setStatus('ready')
+
+    const startedAt = performance.now()
+    lastSecond = startedAt
+    const tick = () => {
+      if (disposed) return
+      while (workerReady && worker && inflight < 2) {
+        worker.postMessage({ type: 'frame', t: (performance.now() - startedAt) / 1000, seq: nextSeq++ })
+        inflight++
+      }
+      rafId = requestAnimationFrame(tick)
+    }
+    rafId = requestAnimationFrame(tick)
+    }
+
+    setupPainter().then((p) => {
+      if (disposed) { p.dispose(); return }
+      painter = p
+      proceed()
+    }).catch((e) => {
+      setError(e instanceof Error ? e.message : String(e))
+      setStatus('error')
+    })
+
+    return () => {
+      disposed = true
+      if (rafId) cancelAnimationFrame(rafId)
+      if (resizeTimeout) window.clearTimeout(resizeTimeout)
+      ro?.disconnect()
+      if (keyHandler) window.removeEventListener('keydown', keyHandler)
+      worker?.postMessage({ type: 'dispose' })
+      worker?.terminate()
+      ;(painter as { dispose?: () => void } | undefined)?.dispose?.()
+      if (canvas && canvas.parentNode) canvas.parentNode.removeChild(canvas)
+    }
+  }, [forwardInput])
+
+  const kindLabel = kind === 'gl' ? 'WebGL2' : kind === 'gpu' ? 'WebGPU' : 'canvas2d'
+  return (
+    <VariantFrame
+      hostRef={hostRef}
+      status={status}
+      fps={fps}
+      error={error}
+      detail={`${kindLabel} · worker compute ${computeMs}ms · ${cellInfo}`}
+    />
+  )
+}
+
+export function CanvasWorkerVariant(props: { workerFactory: () => Worker; forwardInput?: boolean }) {
+  return <CanvasWorkerVariantInner workerFactory={props.workerFactory} kind="2d" forwardInput={props.forwardInput} />
+}
+
+export function CanvasGLWorkerVariant(props: { workerFactory: () => Worker; forwardInput?: boolean }) {
+  return <CanvasWorkerVariantInner workerFactory={props.workerFactory} kind="gl" forwardInput={props.forwardInput} />
+}
+
+export function CanvasGPUWorkerVariant(props: { workerFactory: () => Worker; forwardInput?: boolean }) {
+  return <CanvasWorkerVariantInner workerFactory={props.workerFactory} kind="gpu" forwardInput={props.forwardInput} />
+}
+
+// ---- WebGL canvas paint ---------------------------------------------------
+
+export function CanvasGLVariant({ draw, onInput }: DrawProps) {
+  const hostRef = useRef<HTMLDivElement>(null)
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
+  const [error, setError] = useState<string | null>(null)
+  const [fps, setFps] = useState(0)
+  const [cellInfo, setCellInfo] = useState('')
+  const drawRef = useRef(draw)
+  drawRef.current = draw
+  const onInputRef = useRef(onInput)
+  onInputRef.current = onInput
+
+  useEffect(() => {
+    let buf: OpentuiBuffer | undefined
+    let painter: CanvasGLPainter | undefined
+    let canvas: HTMLCanvasElement | undefined
+    let ro: ResizeObserver | undefined
+    let keyHandler: ((e: KeyboardEvent) => void) | undefined
+    let resizeTimeout = 0
+    let rafId = 0
+    let disposed = false
+
+    function syncSize() {
+      if (!painter || !buf || !hostRef.current) return
+      const rect = hostRef.current.getBoundingClientRect()
+      const { cols, rows } = painter.fit(rect.width, rect.height)
+      painter.resize(cols, rows)
+      if (cols !== buf.width || rows !== buf.height) {
+        buf.resize(cols, rows); buf.clear([0, 0, 0, 1])
+      }
+      setCellInfo(`${cols}x${rows}`)
+    }
+
+    loadOpentui().then((opentui) => {
+      if (disposed || !hostRef.current) return
+      canvas = document.createElement('canvas')
+      canvas.style.display = 'block'
+      hostRef.current.appendChild(canvas)
+      try {
+        painter = new CanvasGLPainter(canvas, { fontSize: 13 })
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e))
+        setStatus('error')
+        return
+      }
+      const rect = hostRef.current.getBoundingClientRect()
+      const { cols, rows } = painter.fit(rect.width, rect.height)
+      painter.resize(cols, rows)
+      buf = OpentuiBuffer.create(opentui, cols, rows, { id: 'variant-gl', widthMethod: 'unicode' })
+      buf.clear([0, 0, 0, 1])
+      setCellInfo(`${cols}x${rows}`)
+      ro = new ResizeObserver(() => {
+        if (resizeTimeout) window.clearTimeout(resizeTimeout)
+        resizeTimeout = window.setTimeout(() => { resizeTimeout = 0; syncSize() }, 120)
+      })
+      ro.observe(hostRef.current)
+
+      if (onInputRef.current) {
+        canvas.tabIndex = 0
+        canvas.style.outline = 'none'
+        canvas.focus()
+        keyHandler = (e: KeyboardEvent) => {
+          if (document.activeElement !== canvas) return
+          const bytes = keyEventToBytes(e)
+          if (bytes !== null) {
+            e.preventDefault()
+            onInputRef.current?.(bytes)
+          }
+        }
+        window.addEventListener('keydown', keyHandler)
+      }
+
+      setError(null); setStatus('ready')
+
+      const startedAt = performance.now()
+      let lastSecond = startedAt, framesThisSecond = 0, frame = 0
+      const tick = () => {
+        if (disposed || !buf || !painter) return
+        const now = performance.now()
+        try {
+          drawRef.current(buf, (now - startedAt) / 1000, frame, opentui)
+          painter.paint(buf)
+        } catch (e) {
+          setError(e instanceof Error ? e.message : String(e)); setStatus('error'); return
+        }
+        frame++
+        framesThisSecond++
+        if (now - lastSecond >= 1000) { setFps(framesThisSecond); framesThisSecond = 0; lastSecond = now }
+        rafId = requestAnimationFrame(tick)
+      }
+      rafId = requestAnimationFrame(tick)
+    }).catch((err) => { setError(err?.message ?? String(err)); setStatus('error') })
+
+    return () => {
+      disposed = true
+      if (rafId) cancelAnimationFrame(rafId)
+      if (resizeTimeout) window.clearTimeout(resizeTimeout)
+      ro?.disconnect()
+      if (keyHandler) window.removeEventListener('keydown', keyHandler)
+      painter?.dispose()
+      buf?.destroy()
+      if (canvas && canvas.parentNode) canvas.parentNode.removeChild(canvas)
+    }
+  }, [])
+
+  return <VariantFrame hostRef={hostRef} status={status} fps={fps} error={error} detail={`WebGL2 · instanced quads · ${cellInfo}`} />
+}
+
+// ---- WebGPU canvas paint --------------------------------------------------
+
+export function CanvasGPUVariant({ draw, onInput }: DrawProps) {
+  const hostRef = useRef<HTMLDivElement>(null)
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
+  const [error, setError] = useState<string | null>(null)
+  const [fps, setFps] = useState(0)
+  const [cellInfo, setCellInfo] = useState('')
+  const drawRef = useRef(draw)
+  drawRef.current = draw
+  const onInputRef = useRef(onInput)
+  onInputRef.current = onInput
+
+  useEffect(() => {
+    let buf: OpentuiBuffer | undefined
+    let painter: CanvasGPUPainter | undefined
+    let canvas: HTMLCanvasElement | undefined
+    let ro: ResizeObserver | undefined
+    let keyHandler: ((e: KeyboardEvent) => void) | undefined
+    let resizeTimeout = 0
+    let rafId = 0
+    let disposed = false
+
+    function syncSize() {
+      if (!painter || !buf || !hostRef.current) return
+      const rect = hostRef.current.getBoundingClientRect()
+      const { cols, rows } = painter.fit(rect.width, rect.height)
+      painter.resize(cols, rows)
+      if (cols !== buf.width || rows !== buf.height) {
+        buf.resize(cols, rows); buf.clear([0, 0, 0, 1])
+      }
+      setCellInfo(`${cols}x${rows}`)
+    }
+
+    Promise.all([loadOpentui(), (async () => {
+      if (!hostRef.current) return null
+      canvas = document.createElement('canvas')
+      canvas.style.display = 'block'
+      hostRef.current.appendChild(canvas)
+      try {
+        painter = new CanvasGPUPainter(canvas, { fontSize: 13 })
+        await painter.init()
+      } catch (e) {
+        throw e
+      }
+      return painter
+    })()]).then(([opentui]) => {
+      if (disposed || !hostRef.current || !painter || !canvas) return
+      const rect = hostRef.current.getBoundingClientRect()
+      const { cols, rows } = painter.fit(rect.width, rect.height)
+      painter.resize(cols, rows)
+      buf = OpentuiBuffer.create(opentui, cols, rows, { id: 'variant-gpu', widthMethod: 'unicode' })
+      buf.clear([0, 0, 0, 1])
+      setCellInfo(`${cols}x${rows}`)
+      ro = new ResizeObserver(() => {
+        if (resizeTimeout) window.clearTimeout(resizeTimeout)
+        resizeTimeout = window.setTimeout(() => { resizeTimeout = 0; syncSize() }, 120)
+      })
+      ro.observe(hostRef.current)
+
+      if (onInputRef.current) {
+        const c = canvas
+        c.tabIndex = 0
+        c.style.outline = 'none'
+        c.focus()
+        keyHandler = (e: KeyboardEvent) => {
+          if (document.activeElement !== c) return
+          const bytes = keyEventToBytes(e)
+          if (bytes !== null) {
+            e.preventDefault()
+            onInputRef.current?.(bytes)
+          }
+        }
+        window.addEventListener('keydown', keyHandler)
+      }
+
+      setError(null); setStatus('ready')
+
+      const startedAt = performance.now()
+      let lastSecond = startedAt, framesThisSecond = 0, frame = 0
+      const tick = () => {
+        if (disposed || !buf || !painter) return
+        const now = performance.now()
+        try {
+          drawRef.current(buf, (now - startedAt) / 1000, frame, opentui)
+          painter.paint(buf)
+        } catch (e) {
+          setError(e instanceof Error ? e.message : String(e)); setStatus('error'); return
+        }
+        frame++
+        framesThisSecond++
+        if (now - lastSecond >= 1000) { setFps(framesThisSecond); framesThisSecond = 0; lastSecond = now }
+        rafId = requestAnimationFrame(tick)
+      }
+      rafId = requestAnimationFrame(tick)
+    }).catch((err) => { setError(err?.message ?? String(err)); setStatus('error') })
+
+    return () => {
+      disposed = true
+      if (rafId) cancelAnimationFrame(rafId)
+      if (resizeTimeout) window.clearTimeout(resizeTimeout)
+      ro?.disconnect()
+      if (keyHandler) window.removeEventListener('keydown', keyHandler)
+      painter?.dispose()
+      buf?.destroy()
+      if (canvas && canvas.parentNode) canvas.parentNode.removeChild(canvas)
+    }
+  }, [])
+
+  return <VariantFrame hostRef={hostRef} status={status} fps={fps} error={error} detail={`WebGPU · instanced quads · ${cellInfo}`} />
 }
 
 // Map a DOM KeyboardEvent to the same byte sequence ghostty/xterm would

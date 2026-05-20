@@ -6,13 +6,27 @@
 import { useState } from 'react'
 import { VariantToggle } from './VariantToggle'
 import {
+  CanvasGLVariant,
+  CanvasGLWorkerVariant,
+  CanvasGPUVariant,
+  CanvasGPUWorkerVariant,
   CanvasVariant,
+  CanvasWorkerVariant,
   GhosttyVariant,
   GhosttyWorkerVariant,
   XtermVariant,
 } from './variants'
 
-export type Variant = 'ghostty' | 'ghostty-worker' | 'xterm' | 'canvas'
+export type Variant =
+  | 'ghostty'
+  | 'ghostty-worker'
+  | 'xterm'
+  | 'canvas'
+  | 'canvas-worker'
+  | 'canvas-gl'
+  | 'canvas-gl-worker'
+  | 'canvas-gpu'
+  | 'canvas-gpu-worker'
 export type EncoderMode = 'full' | 'diff'
 
 interface Props {
@@ -34,9 +48,14 @@ interface Props {
 
 const ALL_VARIANTS: ReadonlyArray<{ key: Variant; label: string; hint: string }> = [
   { key: 'ghostty', label: 'ghostty', hint: 'ghostty-web on main thread' },
-  { key: 'ghostty-worker', label: 'ghostty / worker', hint: 'opentui compute in a Worker, ghostty-web paints' },
+  { key: 'ghostty-worker', label: 'ghostty +worker', hint: 'opentui compute in a Worker, ghostty-web paints' },
   { key: 'xterm', label: 'xterm.js', hint: 'xterm.js v6 with WebGL addon' },
-  { key: 'canvas', label: 'canvas', hint: 'direct 2d canvas paint, no terminal emulator' },
+  { key: 'canvas', label: 'canvas2d', hint: 'direct 2d canvas paint, no terminal emulator' },
+  { key: 'canvas-worker', label: 'canvas2d +worker', hint: 'canvas2d, worker computes the cell grid' },
+  { key: 'canvas-gl', label: 'canvas-gl', hint: 'WebGL2 painter with instanced glyph atlas' },
+  { key: 'canvas-gl-worker', label: 'canvas-gl +worker', hint: 'WebGL2, worker computes the cell grid' },
+  { key: 'canvas-gpu', label: 'canvas-gpu', hint: 'WebGPU painter (Chrome/Edge/Safari TP)' },
+  { key: 'canvas-gpu-worker', label: 'canvas-gpu +worker', hint: 'WebGPU, worker computes the cell grid' },
 ]
 
 const ENCODER_OPTIONS: ReadonlyArray<{ key: EncoderMode; label: string; hint: string }> = [
@@ -59,8 +78,8 @@ export function VariantPicker({
   const [variant, setVariant] = useState<Variant>(() => (filtered.find((v) => v.key === defaultVariant)?.key ?? filtered[0]!.key))
   const [encoderMode, setEncoderMode] = useState<EncoderMode>(defaultEncoder)
 
-  // Canvas variant doesn't go through any ANSI encoder; hide the toggle.
-  const showEncoder = variant !== 'canvas'
+  // Direct-canvas variants don't go through any ANSI encoder; hide the toggle.
+  const showEncoder = variant === 'ghostty' || variant === 'ghostty-worker' || variant === 'xterm'
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden p-3">
@@ -93,6 +112,17 @@ export function VariantPicker({
         <XtermVariant key={`xterm-${encoderMode}`} draw={draw} encoderMode={encoderMode} onInput={onInput} />
       )}
       {variant === 'canvas' && <CanvasVariant key="canvas" draw={draw} onInput={onInput} />}
+      {variant === 'canvas-worker' && workerFactory && (
+        <CanvasWorkerVariant key="canvas-worker" workerFactory={workerFactory} forwardInput={!!onInput} />
+      )}
+      {variant === 'canvas-gl' && <CanvasGLVariant key="canvas-gl" draw={draw} onInput={onInput} />}
+      {variant === 'canvas-gl-worker' && workerFactory && (
+        <CanvasGLWorkerVariant key="canvas-gl-worker" workerFactory={workerFactory} forwardInput={!!onInput} />
+      )}
+      {variant === 'canvas-gpu' && <CanvasGPUVariant key="canvas-gpu" draw={draw} onInput={onInput} />}
+      {variant === 'canvas-gpu-worker' && workerFactory && (
+        <CanvasGPUWorkerVariant key="canvas-gpu-worker" workerFactory={workerFactory} forwardInput={!!onInput} />
+      )}
     </div>
   )
 }

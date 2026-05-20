@@ -13,6 +13,10 @@ importers:
       yoga-layout:
         specifier: 3.2.1
         version: 3.2.1
+    devDependencies:
+      '@webgpu/types':
+        specifier: ^0.1.70
+        version: 0.1.70
 
   packages/opentui/packages/core:
     dependencies:
