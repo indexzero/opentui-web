@@ -1,93 +1,20 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useEffect, useState, useRef } from 'react'
-import { useOpentuiTerminal } from '../demo-lib/useOpentuiTerminal'
-import { DemoFrame } from '../demo-lib/DemoLayout'
-import { hsv } from 'opentui-browser'
-import type { RGBA } from 'opentui-browser'
+import { drawCounter } from '../demo-lib/counter-kernel'
+import { VariantPicker } from '../demo-lib/VariantPicker'
 
-export const Route = createFileRoute('/counter')({ component: Counter })
+export const Route = createFileRoute('/counter')({ component: CounterPage })
 
-const BG: RGBA = [0.04, 0.04, 0.07, 1]
+const counterWorkerFactory = () =>
+  new Worker(new URL('../workers/counter-worker.ts', import.meta.url), { type: 'module' })
 
-const FONT_W = 5
-const FONT_H = 7
-const DIGITS: Record<string, number[]> = {
-  '0': [0x0e, 0x11, 0x13, 0x15, 0x19, 0x11, 0x0e],
-  '1': [0x04, 0x0c, 0x04, 0x04, 0x04, 0x04, 0x0e],
-  '2': [0x0e, 0x11, 0x01, 0x02, 0x04, 0x08, 0x1f],
-  '3': [0x1f, 0x02, 0x04, 0x02, 0x01, 0x11, 0x0e],
-  '4': [0x02, 0x06, 0x0a, 0x12, 0x1f, 0x02, 0x02],
-  '5': [0x1f, 0x10, 0x1e, 0x01, 0x01, 0x11, 0x0e],
-  '6': [0x06, 0x08, 0x10, 0x1e, 0x11, 0x11, 0x0e],
-  '7': [0x1f, 0x01, 0x02, 0x04, 0x08, 0x08, 0x08],
-  '8': [0x0e, 0x11, 0x11, 0x0e, 0x11, 0x11, 0x0e],
-  '9': [0x0e, 0x11, 0x11, 0x0f, 0x01, 0x02, 0x0c],
-}
-const FULL_BLOCK = 0x2588
-
-function Counter() {
-  const [count, setCount] = useState(0)
-  const countRef = useRef(count)
-  countRef.current = count
-
-  useEffect(() => {
-    const id = window.setInterval(() => setCount((c) => c + 1), 50)
-    return () => window.clearInterval(id)
-  }, [])
-
-  const { hostRef, status, error, fps, bytesPerFrame, encoderMode } = useOpentuiTerminal({
-    hideCursor: true,
-    encoderMode: 'diff',
-    background: '#0b0b14',
-    draw: ({ buf, t }) => {
-      buf.clear(BG)
-      const cols = buf.width
-      const rows = buf.height
-      const text = String(countRef.current)
-      const glyphW = FONT_W + 1
-      const startX = Math.floor((cols - text.length * glyphW) / 2)
-      const startY = Math.floor((rows - FONT_H) / 2)
-
-      const rgb = hsv((t * 60) % 360, 0.55, 1)
-      const fg: RGBA = [rgb[0], rgb[1], rgb[2], 1]
-
-      for (let i = 0; i < text.length; i++) {
-        const glyph = DIGITS[text[i]!]
-        if (!glyph) continue
-        for (let row = 0; row < FONT_H; row++) {
-          const bits = glyph[row]!
-          for (let col = 0; col < FONT_W; col++) {
-            if (bits & (1 << (FONT_W - 1 - col))) {
-              buf.setCell(startX + i * glyphW + col, startY + row, FULL_BLOCK, fg, BG, 0)
-            }
-          }
-        }
-      }
-
-      const label = ' React useState -> opentui WASM '
-      for (let i = 0; i < label.length; i++) {
-        buf.setCell(
-          Math.floor((cols - label.length) / 2) + i,
-          startY + FONT_H + 2,
-          label.charCodeAt(i),
-          [0.7, 0.74, 0.86, 1],
-          BG,
-          0,
-        )
-      }
-    },
-  })
-
+function CounterPage() {
   return (
-    <DemoFrame
+    <VariantPicker
       title="counter"
-      subtitle={`React setState driving opentui · ${count}`}
-      status={status}
-      fps={fps}
-      bytesPerFrame={bytesPerFrame}
-      encoderMode={encoderMode}
-      error={error}
-      hostRef={hostRef}
+      subtitle="time-driven · big-pixel digits · same kernel across all variants"
+      draw={drawCounter}
+      workerFactory={counterWorkerFactory}
+      defaultEncoder="diff"
     />
   )
 }

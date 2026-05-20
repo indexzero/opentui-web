@@ -26,6 +26,10 @@ interface Props {
   available?: ReadonlyArray<Variant>
   defaultVariant?: Variant
   defaultEncoder?: EncoderMode
+  // If set, terminal-variant components route keystrokes here. The worker
+  // variant forwards them to the worker via postMessage (worker-side kernel
+  // must declare an input handler via runWorker's second arg).
+  onInput?: (data: string) => void
 }
 
 const ALL_VARIANTS: ReadonlyArray<{ key: Variant; label: string; hint: string }> = [
@@ -48,6 +52,7 @@ export function VariantPicker({
   available,
   defaultVariant = 'ghostty',
   defaultEncoder = 'full',
+  onInput,
 }: Props) {
   const allowed = available ?? ALL_VARIANTS.map((v) => v.key)
   const filtered = ALL_VARIANTS.filter((v) => allowed.includes(v.key) && (v.key !== 'ghostty-worker' || workerFactory !== null))
@@ -73,12 +78,21 @@ export function VariantPicker({
           <VariantToggle value={variant} options={filtered} onChange={setVariant} />
         </div>
       </div>
-      {variant === 'ghostty' && <GhosttyVariant key={`ghostty-${encoderMode}`} draw={draw} encoderMode={encoderMode} />}
-      {variant === 'ghostty-worker' && workerFactory && (
-        <GhosttyWorkerVariant key={`worker-${encoderMode}`} workerFactory={workerFactory} encoderMode={encoderMode} />
+      {variant === 'ghostty' && (
+        <GhosttyVariant key={`ghostty-${encoderMode}`} draw={draw} encoderMode={encoderMode} onInput={onInput} />
       )}
-      {variant === 'xterm' && <XtermVariant key={`xterm-${encoderMode}`} draw={draw} encoderMode={encoderMode} />}
-      {variant === 'canvas' && <CanvasVariant key="canvas" draw={draw} />}
+      {variant === 'ghostty-worker' && workerFactory && (
+        <GhosttyWorkerVariant
+          key={`worker-${encoderMode}`}
+          workerFactory={workerFactory}
+          encoderMode={encoderMode}
+          forwardInput={!!onInput}
+        />
+      )}
+      {variant === 'xterm' && (
+        <XtermVariant key={`xterm-${encoderMode}`} draw={draw} encoderMode={encoderMode} onInput={onInput} />
+      )}
+      {variant === 'canvas' && <CanvasVariant key="canvas" draw={draw} onInput={onInput} />}
     </div>
   )
 }

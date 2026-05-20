@@ -11,14 +11,16 @@ import {
 import type { OpentuiExports } from 'opentui-browser'
 
 export type WorkerKernel = (buf: OpentuiBuffer, t: number, frame: number, opentui: OpentuiExports) => void
+export type WorkerInputHandler = (data: string) => void
 
 export type EncoderMode = 'full' | 'diff'
 
 type FrameReq = { type: 'frame'; t: number; seq: number; clearScreen?: boolean }
 type ResizeReq = { type: 'resize'; cols: number; rows: number }
 type InitReq = { type: 'init'; encoderMode?: EncoderMode }
+type InputReq = { type: 'input'; data: string }
 type DisposeReq = { type: 'dispose' }
-type InReq = FrameReq | ResizeReq | InitReq | DisposeReq
+type InReq = FrameReq | ResizeReq | InitReq | InputReq | DisposeReq
 
 type FrameReply = { type: 'frame'; seq: number; bytes: ArrayBufferLike; computeMs: number }
 type ReadyReply = { type: 'ready' }
@@ -30,7 +32,7 @@ declare const self: {
   postMessage: (msg: OutReply, transfer?: Transferable[]) => void
 }
 
-export function runWorker(kernel: WorkerKernel) {
+export function runWorker(kernel: WorkerKernel, onInput?: WorkerInputHandler) {
   let opentui: OpentuiExports | null = null
   let buf: OpentuiBuffer | null = null
   let firstFrame = true
@@ -73,6 +75,8 @@ export function runWorker(kernel: WorkerKernel) {
         frame++
         const computeMs = performance.now() - start
         post({ type: 'frame', seq: msg.seq, bytes: bytes.buffer, computeMs }, [bytes.buffer])
+      } else if (msg.type === 'input') {
+        onInput?.(msg.data)
       } else if (msg.type === 'dispose') {
         buf?.destroy()
         buf = null

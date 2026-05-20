@@ -18,8 +18,9 @@ import {
   encodeBufferAsAnsiDiff,
   loadOpentui,
 } from 'opentui-browser'
+import type { OpentuiExports } from 'opentui-browser'
 
-export type DrawKernel = (buf: OpentuiBuffer, t: number, frame: number) => void
+export type DrawKernel = (buf: OpentuiBuffer, t: number, frame: number, opentui: OpentuiExports) => void
 export type EncoderMode = 'full' | 'diff'
 
 function encode(buf: OpentuiBuffer, mode: EncoderMode, clearScreen: boolean): string {
@@ -77,9 +78,13 @@ export function VariantFrame({ hostRef, status, fps, error, detail, bytesPerFram
 interface DrawProps {
   draw: DrawKernel
   encoderMode?: EncoderMode
+  // Receives raw input bytes (same shape as ghostty/xterm's onData). Each
+  // variant wires its native input source here; the worker variant forwards
+  // these via postMessage so the worker-side kernel sees them.
+  onInput?: (data: string) => void
 }
 
-export function GhosttyVariant({ draw, encoderMode = 'full' }: DrawProps) {
+export function GhosttyVariant({ draw, encoderMode = 'full', onInput }: DrawProps) {
   const hostRef = useRef<HTMLDivElement>(null)
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [error, setError] = useState<string | null>(null)
@@ -87,6 +92,8 @@ export function GhosttyVariant({ draw, encoderMode = 'full' }: DrawProps) {
   const [bytesPerFrame, setBytesPerFrame] = useState(0)
   const drawRef = useRef(draw)
   drawRef.current = draw
+  const onInputRef = useRef(onInput)
+  onInputRef.current = onInput
 
   useEffect(() => {
     let term: GhosttyTerminal | undefined
@@ -118,6 +125,9 @@ export function GhosttyVariant({ draw, encoderMode = 'full' }: DrawProps) {
       term.open(hostRef.current)
       term.write('\x1b[?25l')
       try { fit.fit() } catch {}
+      if (onInputRef.current) {
+        term.onData((d) => onInputRef.current?.(d))
+      }
       buf = OpentuiBuffer.create(opentui, Math.max(1, term.cols), Math.max(1, term.rows), { id: 'variant', widthMethod: 'unicode' })
       buf.clear([0, 0, 0, 1])
       ro = new ResizeObserver(() => {
@@ -133,7 +143,7 @@ export function GhosttyVariant({ draw, encoderMode = 'full' }: DrawProps) {
         if (disposed || !term || !buf) return
         const now = performance.now()
         try {
-          drawRef.current(buf, (now - startedAt) / 1000, frame)
+          drawRef.current(buf, (now - startedAt) / 1000, frame, opentui)
           const out = encode(buf, encoderMode, firstFrame)
           lastBytes = out.length
           term.write(out)
@@ -183,9 +193,13 @@ export function GhosttyVariant({ draw, encoderMode = 'full' }: DrawProps) {
 interface WorkerProps {
   workerFactory: () => Worker
   encoderMode?: EncoderMode
+  // If set, the variant will forward keystrokes (via term.onData) to the worker
+  // as `{ type: 'input', data }` postMessage. The worker's run-worker.ts
+  // receives them and dispatches to a kernel-supplied input handler.
+  forwardInput?: boolean
 }
 
-export function GhosttyWorkerVariant({ workerFactory, encoderMode = 'full' }: WorkerProps) {
+export function GhosttyWorkerVariant({ workerFactory, encoderMode = 'full', forwardInput }: WorkerProps) {
   const hostRef = useRef<HTMLDivElement>(null)
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [error, setError] = useState<string | null>(null)
@@ -251,6 +265,9 @@ export function GhosttyWorkerVariant({ workerFactory, encoderMode = 'full' }: Wo
       term.open(hostRef.current)
       term.write('\x1b[?25l')
       try { fit.fit() } catch {}
+      if (forwardInput) {
+        term.onData((d) => worker?.postMessage({ type: 'input', data: d }))
+      }
       ro = new ResizeObserver(() => {
         if (resizeTimeout) window.clearTimeout(resizeTimeout)
         resizeTimeout = window.setTimeout(() => { resizeTimeout = 0; syncSize() }, 120)
@@ -280,7 +297,7 @@ export function GhosttyWorkerVariant({ workerFactory, encoderMode = 'full' }: Wo
       try { term?.write('\x1b[?25h') } catch {}
       term?.dispose()
     }
-  }, [encoderMode])
+  }, [encoderMode, forwardInput])
 
   return (
     <VariantFrame
@@ -297,7 +314,7 @@ export function GhosttyWorkerVariant({ workerFactory, encoderMode = 'full' }: Wo
 
 // ---- xterm.js -------------------------------------------------------------
 
-export function XtermVariant({ draw, encoderMode = 'full' }: DrawProps) {
+export function XtermVariant({ draw, encoderMode = 'full', onInput }: DrawProps) {
   const hostRef = useRef<HTMLDivElement>(null)
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [error, setError] = useState<string | null>(null)
@@ -306,6 +323,8 @@ export function XtermVariant({ draw, encoderMode = 'full' }: DrawProps) {
   const [renderer, setRenderer] = useState<'webgl' | 'canvas'>('webgl')
   const drawRef = useRef(draw)
   drawRef.current = draw
+  const onInputRef = useRef(onInput)
+  onInputRef.current = onInput
 
   useEffect(() => {
     let buf: OpentuiBuffer | undefined
@@ -333,7 +352,7 @@ export function XtermVariant({ draw, encoderMode = 'full' }: DrawProps) {
         fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
         theme: { background: '#0b0b14', foreground: '#c0caf5' },
         cursorBlink: false,
-        disableStdin: true,
+        disableStdin: !onInputRef.current,
         allowProposedApi: true,
       })
       fit = new XtermFitAddon()
@@ -347,6 +366,9 @@ export function XtermVariant({ draw, encoderMode = 'full' }: DrawProps) {
       } catch { setRenderer('canvas') }
       term.write('\x1b[?25l')
       try { fit.fit() } catch {}
+      if (onInputRef.current) {
+        term.onData((d) => onInputRef.current?.(d))
+      }
       buf = OpentuiBuffer.create(opentui, Math.max(1, term.cols), Math.max(1, term.rows), { id: 'variant-xterm', widthMethod: 'unicode' })
       buf.clear([0, 0, 0, 1])
       ro = new ResizeObserver(() => {
@@ -362,7 +384,7 @@ export function XtermVariant({ draw, encoderMode = 'full' }: DrawProps) {
         if (disposed || !term || !buf) return
         const now = performance.now()
         try {
-          drawRef.current(buf, (now - startedAt) / 1000, frame)
+          drawRef.current(buf, (now - startedAt) / 1000, frame, opentui)
           const out = encode(buf, encoderMode, firstFrame)
           lastBytes = out.length
           term.write(out)
@@ -408,7 +430,7 @@ export function XtermVariant({ draw, encoderMode = 'full' }: DrawProps) {
 
 // ---- direct canvas paint --------------------------------------------------
 
-export function CanvasVariant({ draw }: DrawProps) {
+export function CanvasVariant({ draw, onInput }: DrawProps) {
   const hostRef = useRef<HTMLDivElement>(null)
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [error, setError] = useState<string | null>(null)
@@ -416,12 +438,15 @@ export function CanvasVariant({ draw }: DrawProps) {
   const [cellInfo, setCellInfo] = useState('')
   const drawRef = useRef(draw)
   drawRef.current = draw
+  const onInputRef = useRef(onInput)
+  onInputRef.current = onInput
 
   useEffect(() => {
     let buf: OpentuiBuffer | undefined
     let painter: CanvasPainter | undefined
     let canvas: HTMLCanvasElement | undefined
     let ro: ResizeObserver | undefined
+    let keyHandler: ((e: KeyboardEvent) => void) | undefined
     let resizeTimeout = 0
     let rafId = 0
     let disposed = false
@@ -454,6 +479,25 @@ export function CanvasVariant({ draw }: DrawProps) {
         resizeTimeout = window.setTimeout(() => { resizeTimeout = 0; syncSize() }, 120)
       })
       ro.observe(hostRef.current)
+
+      // Keyboard input — translate DOM KeyboardEvents into the same byte
+      // sequences ghostty / xterm produce via term.onData. The canvas needs
+      // focus to receive keys; we make it focusable + auto-focus.
+      if (onInputRef.current) {
+        canvas.tabIndex = 0
+        canvas.style.outline = 'none'
+        canvas.focus()
+        keyHandler = (e: KeyboardEvent) => {
+          if (document.activeElement !== canvas) return
+          const bytes = keyEventToBytes(e)
+          if (bytes !== null) {
+            e.preventDefault()
+            onInputRef.current?.(bytes)
+          }
+        }
+        window.addEventListener('keydown', keyHandler)
+      }
+
       setError(null); setStatus('ready')
 
       const startedAt = performance.now()
@@ -462,7 +506,7 @@ export function CanvasVariant({ draw }: DrawProps) {
         if (disposed || !buf || !painter) return
         const now = performance.now()
         try {
-          drawRef.current(buf, (now - startedAt) / 1000, frame)
+          drawRef.current(buf, (now - startedAt) / 1000, frame, opentui)
           painter.paint(buf)
         } catch (e) {
           setError(e instanceof Error ? e.message : String(e)); setStatus('error'); return
@@ -480,10 +524,40 @@ export function CanvasVariant({ draw }: DrawProps) {
       if (rafId) cancelAnimationFrame(rafId)
       if (resizeTimeout) window.clearTimeout(resizeTimeout)
       ro?.disconnect()
+      if (keyHandler) window.removeEventListener('keydown', keyHandler)
       buf?.destroy()
       if (canvas && canvas.parentNode) canvas.parentNode.removeChild(canvas)
     }
   }, [])
 
   return <VariantFrame hostRef={hostRef} status={status} fps={fps} error={error} detail={`direct canvas · no terminal emulator · ${cellInfo}`} />
+}
+
+// Map a DOM KeyboardEvent to the same byte sequence ghostty/xterm would
+// hand to onData. Returns null for keys we don't recognize (caller should
+// let them fall through to the browser).
+function keyEventToBytes(e: KeyboardEvent): string | null {
+  if (e.ctrlKey || e.metaKey || e.altKey) {
+    // Ctrl-letter → ASCII control codes (Ctrl-A = \x01, etc.)
+    if (e.ctrlKey && !e.metaKey && !e.altKey && e.key.length === 1) {
+      const c = e.key.toLowerCase().charCodeAt(0)
+      if (c >= 0x61 && c <= 0x7a) return String.fromCharCode(c - 0x60)
+    }
+    return null
+  }
+  switch (e.key) {
+    case 'Backspace': return '\x7f'
+    case 'Enter': return '\r'
+    case 'Tab': return '\t'
+    case 'Escape': return '\x1b'
+    case 'ArrowUp': return '\x1b[A'
+    case 'ArrowDown': return '\x1b[B'
+    case 'ArrowRight': return '\x1b[C'
+    case 'ArrowLeft': return '\x1b[D'
+    case 'Delete': return '\x1b[3~'
+    case 'Home': return '\x1b[H'
+    case 'End': return '\x1b[F'
+  }
+  if (e.key.length === 1) return e.key
+  return null
 }
