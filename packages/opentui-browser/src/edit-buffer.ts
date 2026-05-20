@@ -16,8 +16,10 @@ export interface Cursor {
 }
 
 export class OpentuiEditBuffer {
-  private readCursorRowPtr: number
-  private readCursorColPtr: number
+  // One contiguous 8-byte slot: row at +0, col at +4. Two separate allocs
+  // would NOT be adjacent in wasm memory, so a single Uint32Array of length 2
+  // over the first one read garbage for the second element.
+  private readCursorPtr: number
   private readBufPtr: number
   private readBufLen: number
 
@@ -25,8 +27,7 @@ export class OpentuiEditBuffer {
     readonly mod: OpentuiExports,
     readonly ptr: number,
   ) {
-    this.readCursorRowPtr = mod.opentuiAlloc(4)
-    this.readCursorColPtr = mod.opentuiAlloc(4)
+    this.readCursorPtr = mod.opentuiAlloc(8)
     this.readBufPtr = mod.opentuiAlloc(READ_BUF_BYTES)
     this.readBufLen = READ_BUF_BYTES
   }
@@ -38,8 +39,7 @@ export class OpentuiEditBuffer {
   }
 
   destroy() {
-    this.mod.opentuiFree(this.readCursorRowPtr, 4)
-    this.mod.opentuiFree(this.readCursorColPtr, 4)
+    this.mod.opentuiFree(this.readCursorPtr, 8)
     this.mod.opentuiFree(this.readBufPtr, this.readBufLen)
     this.mod.destroyEditBuffer(this.ptr)
   }
@@ -61,8 +61,8 @@ export class OpentuiEditBuffer {
   moveDown() { this.mod.editBufferMoveCursorDown(this.ptr) }
 
   getCursor(): Cursor {
-    this.mod.editBufferGetCursor(this.ptr, this.readCursorRowPtr, this.readCursorColPtr)
-    const view = new Uint32Array(this.mod.memory.buffer, this.readCursorRowPtr, 2)
+    this.mod.editBufferGetCursor(this.ptr, this.readCursorPtr, this.readCursorPtr + 4)
+    const view = new Uint32Array(this.mod.memory.buffer, this.readCursorPtr, 2)
     return { row: view[0]!, col: view[1]! }
   }
 
