@@ -4,6 +4,7 @@ import '../styles.css'
 
 const TABS = [
   { to: '/plasma', label: 'plasma' },
+  { to: '/mandelbrot', label: 'mandelbrot' },
   { to: '/fire', label: 'fire' },
   { to: '/life', label: 'life' },
   { to: '/matrix', label: 'matrix' },

@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PlasmaRouteImport } from './routes/plasma'
 import { Route as MatrixRouteImport } from './routes/matrix'
+import { Route as MandelbrotRouteImport } from './routes/mandelbrot'
 import { Route as LifeRouteImport } from './routes/life'
 import { Route as LayoutRouteImport } from './routes/layout'
 import { Route as FireRouteImport } from './routes/fire'
@@ -27,6 +28,11 @@ const PlasmaRoute = PlasmaRouteImport.update({
 const MatrixRoute = MatrixRouteImport.update({
   id: '/matrix',
   path: '/matrix',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MandelbrotRoute = MandelbrotRouteImport.update({
+  id: '/mandelbrot',
+  path: '/mandelbrot',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LifeRoute = LifeRouteImport.update({
@@ -73,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/fire': typeof FireRoute
   '/layout': typeof LayoutRoute
   '/life': typeof LifeRoute
+  '/mandelbrot': typeof MandelbrotRoute
   '/matrix': typeof MatrixRoute
   '/plasma': typeof PlasmaRoute
 }
@@ -84,6 +91,7 @@ export interface FileRoutesByTo {
   '/fire': typeof FireRoute
   '/layout': typeof LayoutRoute
   '/life': typeof LifeRoute
+  '/mandelbrot': typeof MandelbrotRoute
   '/matrix': typeof MatrixRoute
   '/plasma': typeof PlasmaRoute
 }
@@ -96,6 +104,7 @@ export interface FileRoutesById {
   '/fire': typeof FireRoute
   '/layout': typeof LayoutRoute
   '/life': typeof LifeRoute
+  '/mandelbrot': typeof MandelbrotRoute
   '/matrix': typeof MatrixRoute
   '/plasma': typeof PlasmaRoute
 }
@@ -109,6 +118,7 @@ export interface FileRouteTypes {
     | '/fire'
     | '/layout'
     | '/life'
+    | '/mandelbrot'
     | '/matrix'
     | '/plasma'
   fileRoutesByTo: FileRoutesByTo
@@ -120,6 +130,7 @@ export interface FileRouteTypes {
     | '/fire'
     | '/layout'
     | '/life'
+    | '/mandelbrot'
     | '/matrix'
     | '/plasma'
   id:
@@ -131,6 +142,7 @@ export interface FileRouteTypes {
     | '/fire'
     | '/layout'
     | '/life'
+    | '/mandelbrot'
     | '/matrix'
     | '/plasma'
   fileRoutesById: FileRoutesById
@@ -143,6 +155,7 @@ export interface RootRouteChildren {
   FireRoute: typeof FireRoute
   LayoutRoute: typeof LayoutRoute
   LifeRoute: typeof LifeRoute
+  MandelbrotRoute: typeof MandelbrotRoute
   MatrixRoute: typeof MatrixRoute
   PlasmaRoute: typeof PlasmaRoute
 }
@@ -161,6 +174,13 @@ declare module '@tanstack/react-router' {
       path: '/matrix'
       fullPath: '/matrix'
       preLoaderRoute: typeof MatrixRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mandelbrot': {
+      id: '/mandelbrot'
+      path: '/mandelbrot'
+      fullPath: '/mandelbrot'
+      preLoaderRoute: typeof MandelbrotRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/life': {
@@ -223,6 +243,7 @@ const rootRouteChildren: RootRouteChildren = {
   FireRoute: FireRoute,
   LayoutRoute: LayoutRoute,
   LifeRoute: LifeRoute,
+  MandelbrotRoute: MandelbrotRoute,
   MatrixRoute: MatrixRoute,
   PlasmaRoute: PlasmaRoute,
 }
