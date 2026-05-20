@@ -131,7 +131,11 @@ export class CanvasGPUPainter {
     this.fontSize = opts.fontSize ?? 13
     this.fontFamily = opts.fontFamily ?? 'ui-monospace, SFMono-Regular, Menlo, monospace'
     this.dpr = window.devicePixelRatio || 1
-    this.debugAtlas = opts.debugAtlas ?? false
+    // Auto-enable atlas debug overlay if the page is opened with ?gpuDebug=1
+    // so we can inspect without round-tripping through a code change.
+    const urlDebug = typeof window !== 'undefined'
+      && new URLSearchParams(window.location.search).get('gpuDebug') === '1'
+    this.debugAtlas = opts.debugAtlas ?? urlDebug
     if (!('gpu' in navigator)) {
       throw new Error('CanvasGPUPainter: navigator.gpu unavailable (no WebGPU)')
     }
