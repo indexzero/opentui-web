@@ -6,6 +6,7 @@ const TABS = [
   { to: '/plasma', label: 'plasma' },
   { to: '/plasma-worker', label: 'plasma-worker' },
   { to: '/plasma-canvas', label: 'plasma-canvas' },
+  { to: '/plasma-xterm', label: 'plasma-xterm' },
   { to: '/fire', label: 'fire' },
   { to: '/life', label: 'life' },
   { to: '/matrix', label: 'matrix' },
