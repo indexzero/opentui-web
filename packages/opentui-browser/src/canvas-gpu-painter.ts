@@ -24,9 +24,7 @@ struct Uniforms {
   cellSize: vec2f,
   resolution: vec2f,
   atlasGrid: vec2f,
-  // UV inset in texture-space (half a texel along each atlas axis) so that
-  // linear sampling at the cell boundary doesn't bleed into the neighbor.
-  atlasInset: vec2f,
+  pad0: vec2f,
 };
 
 @group(0) @binding(0) var<uniform> U: Uniforms;
@@ -50,11 +48,7 @@ fn vs_main(
   let idx = max(glyph, 0.0);
   let gx = idx - floor(idx / U.atlasGrid.x) * U.atlasGrid.x;
   let gy = floor(idx / U.atlasGrid.x);
-  // Inset the [0,1] quad coords slightly so the resulting UV never lands on
-  // the exact cell boundary (where linear sampling would pull in the
-  // adjacent glyph's pixels).
-  let insetQuad = mix(U.atlasInset, vec2f(1.0) - U.atlasInset, quad);
-  out.uv = (vec2f(gx, gy) + insetQuad) / U.atlasGrid;
+  out.uv = (vec2f(gx, gy) + quad) / U.atlasGrid;
   out.fg = fg;
   out.bg = bg;
   out.glyph = glyph;
@@ -63,10 +57,9 @@ fn vs_main(
 
 @fragment
 fn fs_main(in: VsOut) -> @location(0) vec4f {
-  // textureSampleLevel skips derivative-based mip selection — we have only
-  // a single mip level, and the explicit LOD avoids edge wobble that some
-  // WebGPU backends exhibit with textureSample on a single-LOD texture.
-  let a = textureSampleLevel(atlas, samp, in.uv, 0.0).a;
+  // textureSample must be called from uniform control flow — i.e. before
+  // any branch on per-fragment data. Sample first, branch second.
+  let a = textureSample(atlas, samp, in.uv).a;
   if (in.glyph < 0.0) { return in.bg; }
   return mix(in.bg, in.fg, a);
 }
@@ -84,10 +77,6 @@ interface AtlasInfo {
 interface PainterOptions {
   fontSize?: number
   fontFamily?: string
-  // When true, after building the atlas, also attach it to the document body
-  // as a fixed-position <img> in the top-right corner so we can inspect what
-  // glyph pixels were uploaded to the GPU. Off by default.
-  debugAtlas?: boolean
 }
 
 function defaultGlyphSet(): number[] {
@@ -116,7 +105,6 @@ export class CanvasGPUPainter {
   private fontSize: number
   private fontFamily: string
   private dpr: number
-  private debugAtlas: boolean
   private instanceCapacity = 0
   private instanceData: Float32Array | null = null
   private ready = false
@@ -131,11 +119,6 @@ export class CanvasGPUPainter {
     this.fontSize = opts.fontSize ?? 13
     this.fontFamily = opts.fontFamily ?? 'ui-monospace, SFMono-Regular, Menlo, monospace'
     this.dpr = window.devicePixelRatio || 1
-    // Auto-enable atlas debug overlay if the page is opened with ?gpuDebug=1
-    // so we can inspect without round-tripping through a code change.
-    const urlDebug = typeof window !== 'undefined'
-      && new URLSearchParams(window.location.search).get('gpuDebug') === '1'
-    this.debugAtlas = opts.debugAtlas ?? urlDebug
     if (!('gpu' in navigator)) {
       throw new Error('CanvasGPUPainter: navigator.gpu unavailable (no WebGPU)')
     }
@@ -221,9 +204,6 @@ export class CanvasGPUPainter {
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     })
 
-    // Linear filter for smooth glyph edges. Nearest sampling fixed nothing
-    // (artifacts still present) and made text noticeably worse, so back to
-    // linear. The half-texel inset still applies as bleed insurance.
     this.sampler = this.device.createSampler({ magFilter: 'linear', minFilter: 'linear' })
 
     this.rebuildBindGroup()
@@ -273,18 +253,6 @@ export class CanvasGPUPainter {
       { texture },
       [atlasCanvas.width, atlasCanvas.height],
     )
-
-    if (this.debugAtlas) {
-      // Surface the atlas canvas in the page so we can inspect what was
-      // actually uploaded to the GPU. Pinned top-right, scaled down so it
-      // doesn't dominate the viewport.
-      const dbg = atlasCanvas.cloneNode(true) as HTMLCanvasElement
-      dbg.style.cssText = 'position:fixed;top:8px;right:8px;z-index:9999;border:2px solid magenta;background:#222;max-width:50vw;max-height:50vh;image-rendering:pixelated'
-      dbg.dataset.role = 'gpu-atlas-debug'
-      const prev = document.querySelector('[data-role="gpu-atlas-debug"]')
-      if (prev) prev.remove()
-      document.body.appendChild(dbg)
-    }
 
     return { texture, cols: atlasCols, rows: atlasRows, glyphMap, cellPxW, cellPxH }
   }
@@ -364,11 +332,6 @@ export class CanvasGPUPainter {
 
     this.device.queue.writeBuffer(this.instanceBuffer, 0, data.buffer, 0, cellCount * 48)
 
-    // Half-texel inset — under linear sampling this is the standard atlas-bleed
-    // workaround. Texel center sits exactly at the cell boundary, so the
-    // 4-tap linear filter weights pull purely from the intended cell.
-    const insetU = 0.5 / (this.atlas.cellPxW * this.dpr)
-    const insetV = 0.5 / (this.atlas.cellPxH * this.dpr)
     const uniforms = new Float32Array(8)
     uniforms[0] = this.cellWidth * this.dpr
     uniforms[1] = this.cellHeight * this.dpr
@@ -376,8 +339,6 @@ export class CanvasGPUPainter {
     uniforms[3] = this.canvas.height
     uniforms[4] = this.atlas.cols
     uniforms[5] = this.atlas.rows
-    uniforms[6] = insetU
-    uniforms[7] = insetV
     this.device.queue.writeBuffer(this.uniformBuffer, 0, uniforms.buffer)
 
     const encoder = this.device.createCommandEncoder()
