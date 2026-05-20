@@ -113,6 +113,10 @@ export fn bufferClear(bufferPtr: *buffer.OptimizedBuffer, bg: [*]const f32) void
     bufferPtr.clear(utils.f32PtrToRGBA(bg), null) catch {};
 }
 
+export fn bufferResize(bufferPtr: *buffer.OptimizedBuffer, width: u32, height: u32) void {
+    bufferPtr.resize(width, height) catch {};
+}
+
 export fn createTextBuffer(widthMethod: u8) ?*text_buffer.UnifiedTextBuffer {
     const pool = gp.initGlobalPool(arena_allocator);
     const link_pool = link.initGlobalLinkPool(arena_allocator);
@@ -145,4 +149,42 @@ export fn editBufferInsertText(eb: *edit_buffer_mod.EditBuffer, textPtr: [*]cons
 
 export fn editBufferGetText(eb: *edit_buffer_mod.EditBuffer, outPtr: [*]u8, maxLen: usize) usize {
     return eb.getText(outPtr[0..maxLen]);
+}
+
+export fn editBufferGetCursor(eb: *edit_buffer_mod.EditBuffer, outRow: *u32, outCol: *u32) void {
+    const cursor = eb.getPrimaryCursor();
+    outRow.* = cursor.row;
+    outCol.* = cursor.col;
+}
+
+export fn editBufferDeleteCharBackward(eb: *edit_buffer_mod.EditBuffer) void {
+    eb.backspace() catch {};
+}
+
+export fn editBufferDeleteChar(eb: *edit_buffer_mod.EditBuffer) void {
+    eb.deleteForward() catch {};
+}
+
+export fn editBufferMoveCursorLeft(eb: *edit_buffer_mod.EditBuffer) void {
+    eb.moveLeft();
+}
+
+export fn editBufferMoveCursorRight(eb: *edit_buffer_mod.EditBuffer) void {
+    eb.moveRight();
+}
+
+export fn editBufferMoveCursorUp(eb: *edit_buffer_mod.EditBuffer) void {
+    eb.moveUp();
+}
+
+export fn editBufferMoveCursorDown(eb: *edit_buffer_mod.EditBuffer) void {
+    eb.moveDown();
+}
+
+export fn editBufferNewLine(eb: *edit_buffer_mod.EditBuffer) void {
+    eb.insertText("\n") catch {};
+}
+
+export fn editBufferGetLineCount(eb: *edit_buffer_mod.EditBuffer) u32 {
+    return eb.tb.getLineCount();
 }

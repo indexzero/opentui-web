@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PlasmaRouteImport } from './routes/plasma'
 import { Route as MatrixRouteImport } from './routes/matrix'
+import { Route as EditorRouteImport } from './routes/editor'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CounterRouteImport } from './routes/counter'
 import { Route as IndexRouteImport } from './routes/index'
@@ -23,6 +24,11 @@ const PlasmaRoute = PlasmaRouteImport.update({
 const MatrixRoute = MatrixRouteImport.update({
   id: '/matrix',
   path: '/matrix',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EditorRoute = EditorRouteImport.update({
+  id: '/editor',
+  path: '/editor',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -45,6 +51,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/counter': typeof CounterRoute
   '/dashboard': typeof DashboardRoute
+  '/editor': typeof EditorRoute
   '/matrix': typeof MatrixRoute
   '/plasma': typeof PlasmaRoute
 }
@@ -52,6 +59,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/counter': typeof CounterRoute
   '/dashboard': typeof DashboardRoute
+  '/editor': typeof EditorRoute
   '/matrix': typeof MatrixRoute
   '/plasma': typeof PlasmaRoute
 }
@@ -60,21 +68,30 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/counter': typeof CounterRoute
   '/dashboard': typeof DashboardRoute
+  '/editor': typeof EditorRoute
   '/matrix': typeof MatrixRoute
   '/plasma': typeof PlasmaRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/counter' | '/dashboard' | '/matrix' | '/plasma'
+  fullPaths: '/' | '/counter' | '/dashboard' | '/editor' | '/matrix' | '/plasma'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/counter' | '/dashboard' | '/matrix' | '/plasma'
-  id: '__root__' | '/' | '/counter' | '/dashboard' | '/matrix' | '/plasma'
+  to: '/' | '/counter' | '/dashboard' | '/editor' | '/matrix' | '/plasma'
+  id:
+    | '__root__'
+    | '/'
+    | '/counter'
+    | '/dashboard'
+    | '/editor'
+    | '/matrix'
+    | '/plasma'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CounterRoute: typeof CounterRoute
   DashboardRoute: typeof DashboardRoute
+  EditorRoute: typeof EditorRoute
   MatrixRoute: typeof MatrixRoute
   PlasmaRoute: typeof PlasmaRoute
 }
@@ -93,6 +110,13 @@ declare module '@tanstack/react-router' {
       path: '/matrix'
       fullPath: '/matrix'
       preLoaderRoute: typeof MatrixRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/editor': {
+      id: '/editor'
+      path: '/editor'
+      fullPath: '/editor'
+      preLoaderRoute: typeof EditorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -123,6 +147,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CounterRoute: CounterRoute,
   DashboardRoute: DashboardRoute,
+  EditorRoute: EditorRoute,
   MatrixRoute: MatrixRoute,
   PlasmaRoute: PlasmaRoute,
 }

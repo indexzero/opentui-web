@@ -68,6 +68,13 @@ export class OpentuiBuffer {
     this.mod.bufferClear(this.ptr, this.bgScratch)
   }
 
+  resize(width: number, height: number) {
+    if (width === this.width && height === this.height) return
+    this.mod.bufferResize(this.ptr, width, height)
+    ;(this as { -readonly [K in keyof OpentuiBuffer]: OpentuiBuffer[K] }).width = width
+    ;(this as { -readonly [K in keyof OpentuiBuffer]: OpentuiBuffer[K] }).height = height
+  }
+
   setCell(x: number, y: number, char: number, fg: RGBA, bg: RGBA, attributes = 0) {
     writeRGBA(this.mod, this.fgScratch, fg)
     writeRGBA(this.mod, this.bgScratch, bg)

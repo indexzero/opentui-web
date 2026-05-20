@@ -47,6 +47,21 @@ export interface OpentuiExports {
     fgPtr: number,
     attributes: number,
   ): void
+  bufferResize(bufferPtr: number, width: number, height: number): void
+
+  createEditBuffer(widthMethod: number): number
+  destroyEditBuffer(ebPtr: number): void
+  editBufferInsertText(ebPtr: number, textPtr: number, textLen: number): void
+  editBufferGetText(ebPtr: number, outPtr: number, maxLen: number): number
+  editBufferGetCursor(ebPtr: number, outRowPtr: number, outColPtr: number): void
+  editBufferDeleteCharBackward(ebPtr: number): void
+  editBufferDeleteChar(ebPtr: number): void
+  editBufferMoveCursorLeft(ebPtr: number): void
+  editBufferMoveCursorRight(ebPtr: number): void
+  editBufferMoveCursorUp(ebPtr: number): void
+  editBufferMoveCursorDown(ebPtr: number): void
+  editBufferNewLine(ebPtr: number): void
+  editBufferGetLineCount(ebPtr: number): number
 }
 
 let cached: Promise<OpentuiExports> | null = null
