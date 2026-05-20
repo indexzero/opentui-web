@@ -9,9 +9,6 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as PlasmaXtermRouteImport } from './routes/plasma-xterm'
-import { Route as PlasmaWorkerRouteImport } from './routes/plasma-worker'
-import { Route as PlasmaCanvasRouteImport } from './routes/plasma-canvas'
 import { Route as PlasmaRouteImport } from './routes/plasma'
 import { Route as MatrixRouteImport } from './routes/matrix'
 import { Route as LifeRouteImport } from './routes/life'
@@ -22,21 +19,6 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CounterRouteImport } from './routes/counter'
 import { Route as IndexRouteImport } from './routes/index'
 
-const PlasmaXtermRoute = PlasmaXtermRouteImport.update({
-  id: '/plasma-xterm',
-  path: '/plasma-xterm',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PlasmaWorkerRoute = PlasmaWorkerRouteImport.update({
-  id: '/plasma-worker',
-  path: '/plasma-worker',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PlasmaCanvasRoute = PlasmaCanvasRouteImport.update({
-  id: '/plasma-canvas',
-  path: '/plasma-canvas',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const PlasmaRoute = PlasmaRouteImport.update({
   id: '/plasma',
   path: '/plasma',
@@ -93,9 +75,6 @@ export interface FileRoutesByFullPath {
   '/life': typeof LifeRoute
   '/matrix': typeof MatrixRoute
   '/plasma': typeof PlasmaRoute
-  '/plasma-canvas': typeof PlasmaCanvasRoute
-  '/plasma-worker': typeof PlasmaWorkerRoute
-  '/plasma-xterm': typeof PlasmaXtermRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -107,9 +86,6 @@ export interface FileRoutesByTo {
   '/life': typeof LifeRoute
   '/matrix': typeof MatrixRoute
   '/plasma': typeof PlasmaRoute
-  '/plasma-canvas': typeof PlasmaCanvasRoute
-  '/plasma-worker': typeof PlasmaWorkerRoute
-  '/plasma-xterm': typeof PlasmaXtermRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -122,9 +98,6 @@ export interface FileRoutesById {
   '/life': typeof LifeRoute
   '/matrix': typeof MatrixRoute
   '/plasma': typeof PlasmaRoute
-  '/plasma-canvas': typeof PlasmaCanvasRoute
-  '/plasma-worker': typeof PlasmaWorkerRoute
-  '/plasma-xterm': typeof PlasmaXtermRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -138,9 +111,6 @@ export interface FileRouteTypes {
     | '/life'
     | '/matrix'
     | '/plasma'
-    | '/plasma-canvas'
-    | '/plasma-worker'
-    | '/plasma-xterm'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -152,9 +122,6 @@ export interface FileRouteTypes {
     | '/life'
     | '/matrix'
     | '/plasma'
-    | '/plasma-canvas'
-    | '/plasma-worker'
-    | '/plasma-xterm'
   id:
     | '__root__'
     | '/'
@@ -166,9 +133,6 @@ export interface FileRouteTypes {
     | '/life'
     | '/matrix'
     | '/plasma'
-    | '/plasma-canvas'
-    | '/plasma-worker'
-    | '/plasma-xterm'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -181,34 +145,10 @@ export interface RootRouteChildren {
   LifeRoute: typeof LifeRoute
   MatrixRoute: typeof MatrixRoute
   PlasmaRoute: typeof PlasmaRoute
-  PlasmaCanvasRoute: typeof PlasmaCanvasRoute
-  PlasmaWorkerRoute: typeof PlasmaWorkerRoute
-  PlasmaXtermRoute: typeof PlasmaXtermRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/plasma-xterm': {
-      id: '/plasma-xterm'
-      path: '/plasma-xterm'
-      fullPath: '/plasma-xterm'
-      preLoaderRoute: typeof PlasmaXtermRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/plasma-worker': {
-      id: '/plasma-worker'
-      path: '/plasma-worker'
-      fullPath: '/plasma-worker'
-      preLoaderRoute: typeof PlasmaWorkerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/plasma-canvas': {
-      id: '/plasma-canvas'
-      path: '/plasma-canvas'
-      fullPath: '/plasma-canvas'
-      preLoaderRoute: typeof PlasmaCanvasRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/plasma': {
       id: '/plasma'
       path: '/plasma'
@@ -285,9 +225,6 @@ const rootRouteChildren: RootRouteChildren = {
   LifeRoute: LifeRoute,
   MatrixRoute: MatrixRoute,
   PlasmaRoute: PlasmaRoute,
-  PlasmaCanvasRoute: PlasmaCanvasRoute,
-  PlasmaWorkerRoute: PlasmaWorkerRoute,
-  PlasmaXtermRoute: PlasmaXtermRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
