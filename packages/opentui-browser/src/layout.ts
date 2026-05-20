@@ -9,10 +9,31 @@
 // (typically via useMemo over React state). Yoga node creation is cheap, so
 // rebuilding 50-100 nodes per frame is well under a millisecond.
 
-import Yoga, { Align, Direction, Edge, FlexDirection, Gutter, Justify } from 'yoga-layout'
+// We deliberately avoid the default `yoga-layout` import because it does
+// `const Yoga = wrapAssembly(await loadYoga())` at module evaluation. That
+// top-level await silently kills a Web Worker if it ever fails to resolve.
+// `yoga-layout/load` gives us the same Yoga value but via an explicit async
+// loadYoga(), and the enum exports are still synchronous.
+import { Align, Direction, Edge, FlexDirection, Gutter, Justify, loadYoga } from 'yoga-layout/load'
 import type { Node as YogaNode } from 'yoga-layout'
 import { drawBorder, drawString, fillRect } from './draw-helpers'
 import type { OpentuiBuffer, RGBA } from './buffer'
+
+type YogaModule = Awaited<ReturnType<typeof loadYoga>>
+
+let Yoga: YogaModule | null = null
+let yogaLoading: Promise<void> | null = null
+
+function ensureYoga() {
+  if (Yoga) return
+  if (!yogaLoading) {
+    yogaLoading = loadYoga().then((y) => { Yoga = y })
+  }
+}
+
+export function isYogaReady(): boolean {
+  return Yoga !== null
+}
 
 const TRANSPARENT: RGBA = [0, 0, 0, 0]
 const WHITE: RGBA = [1, 1, 1, 1]
@@ -78,7 +99,9 @@ export function custom(props: CustomProps): SceneNode {
 }
 
 function buildYogaTree(node: SceneNode): YogaNode {
-  const n = Yoga.Node.create()
+  // Caller checks Yoga is loaded before invoking, so the non-null assertion
+  // is safe here.
+  const n = Yoga!.Node.create()
 
   if (node.type === 'box') {
     if (node.width !== undefined) n.setWidth(node.width)
@@ -174,6 +197,12 @@ function drawTree(
 }
 
 export function layoutAndDraw(scene: SceneNode, buf: OpentuiBuffer) {
+  if (!Yoga) {
+    // Lazy-load yoga the first time we're called. Subsequent frames render
+    // normally once the WASM finishes loading (typically within a few ms).
+    ensureYoga()
+    return
+  }
   const root = buildYogaTree(scene)
   root.calculateLayout(buf.width, buf.height, Direction.LTR)
   drawTree(scene, root, buf, 0, 0)
