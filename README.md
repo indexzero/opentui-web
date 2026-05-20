@@ -1,6 +1,8 @@
-# open-tui-ghostty-web
+# opentui-web
 
-An exploration of [opentui](https://github.com/justjake/opentui)'s Zig core compiled to WebAssembly and driven from the browser through several different renderers, so the trade-offs can be compared side-by-side. Each demo runs the same kernel through every pipeline; a toolbar at the top of every demo lets you switch between them live and watch the FPS and bytes-per-frame readouts move.
+> **Proof of concept.** Not a library. Not stable. A renderer-comparison lab. Edges are rough, some variants have visible artefacts, the API surface will move. Read the [Status](#status-proof-of-concept) section below before depending on anything in here.
+
+An exploration of [opentui](https://github.com/justjake/opentui)'s Zig core compiled to WebAssembly and driven from the browser through several different rendering pipelines, so the trade-offs can be compared side-by-side. Each demo runs the same kernel through every pipeline; a toolbar at the top of every demo lets you switch between them live and watch the FPS and bytes-per-frame readouts move.
 
 The interesting thing on display is not any single pipeline. It's the gap between them — how much faster a Worker is when paint is cheap, when the diff encoder slashes bandwidth to a few bytes per frame, what you give up by skipping a real terminal emulator.
 
@@ -119,6 +121,27 @@ opentui's Zig core is a cell grid plus operations that mutate it (`setCell`, `dr
 **Why the diff encoder helps when it helps**: the cost ghostty-web's parser pays is roughly proportional to the byte count we hand it. The full encoder emits every cell every frame — \~100 KB for the editor at typical viewport sizes. The diff encoder maintains a shadow of the previous frame's cells in WASM memory and emits cursor-position escapes followed by only the cells that changed. For the editor that's typically 4–50 bytes per frame (the cursor blink, the one cell you just typed). For the dashboard / matrix / counter the win is large. For plasma — every cell changes every frame — the diff encoder is overhead, not relief. The toggle defaults to `full` for safety; per-route defaults turn it on where it pays off.
 
 **Why `canvas-gl` and `canvas-gpu` exist**: with no terminal emulator in the way, painting a cell grid is mostly a quad-per-cell loop, which is exactly what GPUs are built for. The WebGL2 painter builds a glyph atlas at init (a 2D canvas with every supported codepoint rendered onto it, uploaded as a texture), then draws every visible cell as one instance of a single quad via `drawArraysInstanced`. The WebGPU painter does the same in WGSL with a modern API. Both scale to much larger viewports than the canvas2d painter without dropping below 60 fps.
+
+---
+
+## Status: proof of concept
+
+This repo is not an opentui distribution and is not a library you'd `pnpm add`. It's an in-flight exploration. Expect rough edges. To set expectations clearly:
+
+**What was added vs. upstream opentui.** Upstream `opentui` ships a Zig native lib + a Bun/Node FFI binding + a React reconciler + a docs site. This repo vendors that codebase at commit `c8a3f05` and adds the following on top, all of which are new code, none of which exists upstream:
+
+- A `wasm32-freestanding` build target for the Zig core (`packages/opentui/packages/core/src/zig/lib-wasm.zig` plus ~25 lines added to `build.zig`). Upstream targets darwin/linux/windows; the wasm target is ours.
+- A new package `opentui-browser` containing everything JS-side: WASM loader, `OpentuiBuffer` and `OpentuiEditBuffer` wrappers, a Zig-side ANSI emitter (and a diff variant), three custom painters (`CanvasPainter`, `CanvasGLPainter`, `CanvasGPUPainter`), a `CellGrid` wire format for worker transfers, and a yoga-driven layout DSL.
+- A new package `web-demo`: the showcase application — TanStack Router app, nine demo kernels (plasma, mandelbrot, fire, matrix, dashboard, counter, editor, layout, life), the variant-picker + encoder-toggle harness, and the per-demo worker files.
+- Selection of [ghostty-web](https://github.com/coder/ghostty-web) and [xterm.js v6](https://www.npmjs.com/package/@xterm/xterm) as the terminal-emulator-mediated rendering paths.
+
+**What's not in scope.** Lots of opentui's surface area isn't wired through to the browser. The 3D renderer, the sprite animator, tree-sitter highlighting, the React reconciler (`@opentui/react`), the audio plugin, the solid bindings — all present in `packages/opentui/` because the whole upstream was vendored, but none of them are exposed through `opentui-browser`. The `lib-wasm.zig` entry is a pure-compute subset deliberately picked to compile without `terminal.zig` or `file-logger.zig`.
+
+**Stability.** The Zig WASM ABI, the JS wrapper APIs in `opentui-browser`, the demo route structure — all of these are first-pass and will move. Variant component props will change. The `CellGrid` wire format will probably grow fields. The `encoderMode: 'diff'` path has not been hardened beyond what passes these demos by eye. Don't import any of this and expect it to be stable.
+
+**Use it for**: poking at the Zig→WASM path, comparing what direct cell-grid painters cost you vs. a real terminal emulator, learning what worker offload buys you on different kernel shapes, or as a starting point to fork.
+
+**Don't use it for**: shipping a real terminal in your application. For that, talk directly to [ghostty-web](https://github.com/coder/ghostty-web) — the `ghostty` variant here is the thinnest possible wrapper around it.
 
 ---
 
