@@ -8,6 +8,7 @@ const TABS = [
   { to: '/counter', label: 'counter' },
   { to: '/dashboard', label: 'dashboard' },
   { to: '/editor', label: 'editor' },
+  { to: '/layout', label: 'layout' },
 ] as const
 
 export const Route = createRootRoute({ component: RootComponent })

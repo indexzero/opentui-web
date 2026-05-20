@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useRef } from 'react'
 import { useOpentuiTerminal } from '../demo-lib/useOpentuiTerminal'
 import { DemoFrame } from '../demo-lib/DemoLayout'
-import { drawBar, drawBorder, drawSparkline, drawString, fillRect, hsv } from '../demo-lib/draw-primitives'
+import { drawBar, drawBorder, drawSparkline, drawString, fillRect, hsv } from 'opentui-browser'
 import type { RGBA } from 'opentui-browser'
 
 export const Route = createFileRoute('/dashboard')({ component: Dashboard })

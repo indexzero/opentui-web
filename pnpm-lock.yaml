@@ -8,7 +8,11 @@ importers:
 
   .: {}
 
-  packages/opentui-browser: {}
+  packages/opentui-browser:
+    dependencies:
+      yoga-layout:
+        specifier: 3.2.1
+        version: 3.2.1
 
   packages/opentui/packages/core:
     dependencies:

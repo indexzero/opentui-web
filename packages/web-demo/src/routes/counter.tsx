@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState, useRef } from 'react'
 import { useOpentuiTerminal } from '../demo-lib/useOpentuiTerminal'
 import { DemoFrame } from '../demo-lib/DemoLayout'
-import { hsv } from '../demo-lib/draw-primitives'
+import { hsv } from 'opentui-browser'
 import type { RGBA } from 'opentui-browser'
 
 export const Route = createFileRoute('/counter')({ component: Counter })

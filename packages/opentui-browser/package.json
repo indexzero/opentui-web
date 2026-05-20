@@ -13,5 +13,10 @@
     },
     "./opentui.wasm": "./src/opentui.wasm"
   },
-  "files": ["src"]
+  "files": [
+    "src"
+  ],
+  "dependencies": {
+    "yoga-layout": "3.2.1"
+  }
 }

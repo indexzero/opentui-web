@@ -1,7 +1,7 @@
 // Small drawing helpers built on top of opentui-browser primitives. Higher-level
 // "panel"-shaped operations a dashboard or layout-heavy scene needs.
 
-import type { OpentuiBuffer, RGBA } from 'opentui-browser'
+import type { OpentuiBuffer, RGBA } from './buffer'
 
 const TL = 0x256d, TR = 0x256e, BL = 0x2570, BR = 0x256f, H = 0x2500, V = 0x2502
 const FULL = 0x2588 // █

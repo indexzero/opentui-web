@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 import { useOpentuiTerminal } from '../demo-lib/useOpentuiTerminal'
 import { DemoFrame } from '../demo-lib/DemoLayout'
-import { drawBorder, drawString, fillRect } from '../demo-lib/draw-primitives'
+import { drawBorder, drawString, fillRect } from 'opentui-browser'
 import { OpentuiEditBuffer } from 'opentui-browser'
 import type { RGBA } from 'opentui-browser'
 

@@ -113,8 +113,14 @@ export function useOpentuiTerminal(opts: Options) {
           if (disposed || !term || !buf || !opentuiExports) return
           const now = performance.now()
           const t = (now - startedAt) / 1000
-          drawRef.current({ buf, opentui: opentuiExports, term, t, frame })
-          term.write(encodeBufferAsAnsi(buf, { clearScreen: frame === 0 }))
+          try {
+            drawRef.current({ buf, opentui: opentuiExports, term, t, frame })
+            term.write(encodeBufferAsAnsi(buf, { clearScreen: frame === 0 }))
+          } catch (e) {
+            setError(e instanceof Error ? `${e.name}: ${e.message}` : String(e))
+            setStatus('error')
+            return // stop the loop on first throw so we don't spam errors
+          }
           frame++
           framesThisSecond++
           if (now - lastSecond >= 1000) {
