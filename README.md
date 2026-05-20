@@ -6,6 +6,8 @@ An exploration of [opentui](https://github.com/justjake/opentui)'s Zig core comp
 
 The interesting thing on display is not any single pipeline. It's the gap between them — how much faster a Worker is when paint is cheap, when the diff encoder slashes bandwidth to a few bytes per frame, what you give up by skipping a real terminal emulator.
 
+**Built on**: [`justjake/opentui`](https://github.com/justjake/opentui) — the Node.js-compatible fork of the original [`anomalyco/opentui`](https://github.com/anomalyco/opentui). The Node.js compat work (see [`NODEJS_COMPAT.md`](./packages/opentui/NODEJS_COMPAT.md) in the vendored tree) is what made the WebAssembly target practical here: most of the Bun-specific runtime dependencies had already been factored out of the portable path before we touched it. None of this exists without that upstream work.
+
 ---
 
 ## Getting the demo running
@@ -128,7 +130,7 @@ opentui's Zig core is a cell grid plus operations that mutate it (`setCell`, `dr
 
 This repo is not an opentui distribution and is not a library you'd `pnpm add`. It's an in-flight exploration. Expect rough edges. To set expectations clearly:
 
-**What was added vs. upstream opentui.** Upstream `opentui` ships a Zig native lib + a Bun/Node FFI binding + a React reconciler + a docs site. This repo vendors that codebase at commit `c8a3f05` and adds the following on top, all of which are new code, none of which exists upstream:
+**What was added vs. upstream opentui.** Upstream [`justjake/opentui`](https://github.com/justjake/opentui) ships a Zig native lib + a Bun/Node FFI binding + a React reconciler + a docs site. This repo vendors that codebase at commit `c8a3f05` and adds the following on top, all of which are new code, none of which exists upstream:
 
 - A `wasm32-freestanding` build target for the Zig core (`packages/opentui/packages/core/src/zig/lib-wasm.zig` plus ~25 lines added to `build.zig`). Upstream targets darwin/linux/windows; the wasm target is ours.
 - A new package `opentui-browser` containing everything JS-side: WASM loader, `OpentuiBuffer` and `OpentuiEditBuffer` wrappers, a Zig-side ANSI emitter (and a diff variant), three custom painters (`CanvasPainter`, `CanvasGLPainter`, `CanvasGPUPainter`), a `CellGrid` wire format for worker transfers, and a yoga-driven layout DSL.
@@ -201,3 +203,15 @@ The output ends up at `packages/opentui/packages/core/src/zig/lib/wasm/opentui.w
 ### Re-syncing the vendored opentui
 
 Not wired yet. The intended path is `git subtree pull --prefix=packages/opentui <upstream-remote> main`, which will conflict on `lib-wasm.zig` (additive, easy) and on the `wasm` step added to `build.zig` (small, easy). Decisions about publishing or contributing back upstream are deferred.
+
+---
+
+## Credits
+
+- **opentui** — Zig terminal-UI core. Originally [`anomalyco/opentui`](https://github.com/anomalyco/opentui); the Node.js-compatible fork we vendored is [`justjake/opentui`](https://github.com/justjake/opentui). Everything in `packages/opentui/` is theirs, used under the project's MIT licence. The lazy reading is that opentui = upstream's renderer, text-buffer, edit-buffer, layout (yoga), and animation primitives; we just exposed a compute-only subset as a `wasm32-freestanding` build target and wrote a JS layer on top.
+- **ghostty-web** — [`coder/ghostty-web`](https://github.com/coder/ghostty-web). Ghostty's VT100 parser compiled to WebAssembly, with an xterm.js-compatible JS API. Used as the `ghostty` and `ghostty +worker` renderer variants. This is the recommended path for real terminal use.
+- **xterm.js** — [`xtermjs/xterm.js`](https://github.com/xtermjs/xterm.js) v6 + the official WebGL renderer addon. Used as the `xterm.js` variant.
+- **yoga-layout** — [`facebook/yoga`](https://github.com/facebook/yoga) (the WebAssembly port published as `yoga-layout` on npm). Used by `opentui-browser/layout` for the `/layout` demo's flex scene.
+- **TanStack Router** — file-based routing for the demo app.
+
+If you're looking to build a real opentui application in Node.js, go to [`justjake/opentui`](https://github.com/justjake/opentui) directly. If you need a terminal in your browser app, [`ghostty-web`](https://github.com/coder/ghostty-web) is the recommended choice. This repo is a comparison lab for thinking about the trade-offs between them.
