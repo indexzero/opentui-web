@@ -52,3 +52,91 @@ export function encodeBufferAsAnsiBytes(buf: OpentuiBuffer, opts: EncodeOptions 
   out.set(new Uint8Array(buf.mod.memory.buffer, s.ptr, written))
   return out
 }
+
+// Diff encoder — emits cursor-position + only changed cells, not a full
+// redraw. Requires a per-buffer shadow allocation (current encoder state)
+// that we hold in a WeakMap. First call (or after resize) is a force-redraw.
+//
+// What you save: full-redraw is ~64 bytes/cell. Diff is ~9 bytes/changed-cell
+// (cursor position) + ~30 bytes (SGR + UTF-8 char). For editor-like demos
+// where 1 cell changes per frame, that's ~40 bytes vs ~100 KB. Huge.
+//
+// What you take on: correctness risk. Any cell the shadow misses gets stuck
+// at the wrong content until forced. Keep behind opt-in flag until burned in.
+
+interface Shadow {
+  charsPtr: number
+  fgPtr: number
+  bgPtr: number
+  attrsPtr: number
+  width: number
+  height: number
+  forceNext: boolean
+}
+
+const SHADOWS = new WeakMap<OpentuiBuffer, Shadow>()
+
+function shadowFor(buf: OpentuiBuffer): Shadow {
+  let s = SHADOWS.get(buf)
+  const w = buf.width
+  const h = buf.height
+  const cellCount = w * h
+  if (s && s.width === w && s.height === h) return s
+  if (s) {
+    buf.mod.opentuiFree(s.charsPtr, s.width * s.height * 4)
+    buf.mod.opentuiFree(s.fgPtr, s.width * s.height * 16)
+    buf.mod.opentuiFree(s.bgPtr, s.width * s.height * 16)
+    buf.mod.opentuiFree(s.attrsPtr, s.width * s.height * 4)
+  }
+  s = {
+    charsPtr: buf.mod.opentuiAlloc(cellCount * 4),
+    fgPtr: buf.mod.opentuiAlloc(cellCount * 16),
+    bgPtr: buf.mod.opentuiAlloc(cellCount * 16),
+    attrsPtr: buf.mod.opentuiAlloc(cellCount * 4),
+    width: w,
+    height: h,
+    forceNext: true,
+  }
+  SHADOWS.set(buf, s)
+  return s
+}
+
+export function encodeBufferAsAnsiDiff(buf: OpentuiBuffer, opts: EncodeOptions = {}): string {
+  const s = shadowFor(buf)
+  const force = s.forceNext || (opts.clearScreen ?? false)
+  s.forceNext = false
+  const need = buf.width * buf.height * 64 + 64
+  const out = scratch(buf.mod, need)
+  const written = buf.mod.bufferEncodeAnsiDiff(
+    buf.ptr,
+    s.charsPtr,
+    s.fgPtr,
+    s.bgPtr,
+    s.attrsPtr,
+    out.ptr,
+    out.len,
+    force,
+  )
+  return decoder.decode(new Uint8Array(buf.mod.memory.buffer, out.ptr, written))
+}
+
+export function encodeBufferAsAnsiDiffBytes(buf: OpentuiBuffer, opts: EncodeOptions = {}): Uint8Array {
+  const s = shadowFor(buf)
+  const force = s.forceNext || (opts.clearScreen ?? false)
+  s.forceNext = false
+  const need = buf.width * buf.height * 64 + 64
+  const out = scratch(buf.mod, need)
+  const written = buf.mod.bufferEncodeAnsiDiff(
+    buf.ptr,
+    s.charsPtr,
+    s.fgPtr,
+    s.bgPtr,
+    s.attrsPtr,
+    out.ptr,
+    out.len,
+    force,
+  )
+  const bytes = new Uint8Array(written)
+  bytes.set(new Uint8Array(buf.mod.memory.buffer, out.ptr, written))
+  return bytes
+}

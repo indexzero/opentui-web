@@ -61,8 +61,9 @@ function Dashboard() {
   const history = useRef<number[]>([])
   const logScroll = useRef(0)
 
-  const { hostRef, status, error, fps } = useOpentuiTerminal({
+  const { hostRef, status, error, fps, bytesPerFrame, encoderMode } = useOpentuiTerminal({
     hideCursor: true,
+    encoderMode: 'diff',
     draw: ({ buf, t, frame }) => {
       const cols = buf.width
       const rows = buf.height
@@ -174,6 +175,8 @@ function Dashboard() {
       subtitle="multi-panel layout · gauges + sparkline + plasma + log"
       status={status}
       fps={fps}
+      bytesPerFrame={bytesPerFrame}
+      encoderMode={encoderMode}
       error={error}
       hostRef={hostRef}
     />

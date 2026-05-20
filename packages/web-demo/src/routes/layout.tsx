@@ -205,8 +205,9 @@ function LayoutDemo() {
       ],
     })
 
-  const { hostRef, status, error, fps } = useOpentuiTerminal({
+  const { hostRef, status, error, fps, bytesPerFrame, encoderMode } = useOpentuiTerminal({
     hideCursor: true,
+    encoderMode: 'diff',
     draw: ({ buf, t }) => {
       fillRect(buf, 0, 0, buf.width, buf.height, BG)
       layoutAndDraw(scene(t), buf)
@@ -221,6 +222,8 @@ function LayoutDemo() {
       subtitle="yoga flex · sidebar / main / footer composed declaratively"
       status={status}
       fps={fps}
+      bytesPerFrame={bytesPerFrame}
+      encoderMode={encoderMode}
       error={error}
       hostRef={hostRef}
     />

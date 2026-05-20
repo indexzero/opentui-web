@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { FitAddon, Terminal, init as initGhostty } from 'ghostty-web'
-import { OpentuiBuffer, encodeBufferAsAnsi, loadOpentui } from 'opentui-browser'
+import { OpentuiBuffer, encodeBufferAsAnsi, encodeBufferAsAnsiDiff, loadOpentui } from 'opentui-browser'
 import type { OpentuiExports } from 'opentui-browser'
 
 let ghosttyReady: Promise<void> | null = null
@@ -21,6 +21,10 @@ interface Options {
   hideCursor?: boolean
   background?: string
   fontSize?: number
+  // 'full' (default): re-emit every cell every frame, simple and safe.
+  // 'diff': emit only changed cells. Big win for static-mostly scenes
+  // (editor, dashboard); same cost for full-redraws (plasma).
+  encoderMode?: 'full' | 'diff'
   onData?: (data: string, ctx: { opentui: OpentuiExports }) => void
   draw: DrawFn
 }
@@ -34,13 +38,14 @@ export function useOpentuiTerminal(opts: Options) {
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [error, setError] = useState<string | null>(null)
   const [fps, setFps] = useState(0)
+  const [bytesPerFrame, setBytesPerFrame] = useState(0)
 
   const drawRef = useRef<DrawFn>(opts.draw)
   drawRef.current = opts.draw
   const onDataRef = useRef(opts.onData)
   onDataRef.current = opts.onData
 
-  const { hideCursor, background, fontSize } = opts
+  const { hideCursor, background, fontSize, encoderMode = 'full' } = opts
 
   useEffect(() => {
     let term: Terminal | undefined
@@ -108,6 +113,7 @@ export function useOpentuiTerminal(opts: Options) {
         let lastSecond = startedAt
         let framesThisSecond = 0
         let frame = 0
+        let lastBytes = 0
 
         const tick = () => {
           if (disposed || !term || !buf || !opentuiExports) return
@@ -115,7 +121,11 @@ export function useOpentuiTerminal(opts: Options) {
           const t = (now - startedAt) / 1000
           try {
             drawRef.current({ buf, opentui: opentuiExports, term, t, frame })
-            term.write(encodeBufferAsAnsi(buf, { clearScreen: frame === 0 }))
+            const encoded = encoderMode === 'diff'
+              ? encodeBufferAsAnsiDiff(buf, { clearScreen: frame === 0 })
+              : encodeBufferAsAnsi(buf, { clearScreen: frame === 0 })
+            lastBytes = encoded.length
+            term.write(encoded)
           } catch (e) {
             setError(e instanceof Error ? `${e.name}: ${e.message}` : String(e))
             setStatus('error')
@@ -125,6 +135,7 @@ export function useOpentuiTerminal(opts: Options) {
           framesThisSecond++
           if (now - lastSecond >= 1000) {
             setFps(framesThisSecond)
+            setBytesPerFrame(lastBytes)
             framesThisSecond = 0
             lastSecond = now
           }
@@ -148,7 +159,7 @@ export function useOpentuiTerminal(opts: Options) {
       buf?.destroy()
       term?.dispose()
     }
-  }, [hideCursor, background, fontSize])
+  }, [hideCursor, background, fontSize, encoderMode])
 
-  return { hostRef, status, error, fps }
+  return { hostRef, status, error, fps, bytesPerFrame, encoderMode }
 }

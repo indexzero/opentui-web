@@ -10,7 +10,12 @@ export { OpentuiBuffer } from './buffer'
 export type { RGBA } from './buffer'
 export { OpentuiEditBuffer } from './edit-buffer'
 export type { Cursor } from './edit-buffer'
-export { encodeBufferAsAnsi, encodeBufferAsAnsiBytes } from './ansi'
+export {
+  encodeBufferAsAnsi,
+  encodeBufferAsAnsiBytes,
+  encodeBufferAsAnsiDiff,
+  encodeBufferAsAnsiDiffBytes,
+} from './ansi'
 export type { EncodeOptions } from './ansi'
 export { drawBar, drawBorder, drawSparkline, drawString, fillRect, hsv } from './draw-helpers'
 export { CanvasPainter } from './canvas-painter'

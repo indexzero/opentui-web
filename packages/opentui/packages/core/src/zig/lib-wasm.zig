@@ -7,6 +7,7 @@
 
 const std = @import("std");
 
+const ansi = @import("ansi.zig");
 const buffer = @import("buffer.zig");
 const text_buffer = @import("text-buffer.zig");
 const edit_buffer_mod = @import("edit-buffer.zig");
@@ -266,6 +267,149 @@ export fn bufferEncodeAnsi(
         }
         i = appendStr(out, i, "\r\n");
     }
+    i = appendStr(out, i, "\x1b[0m");
+    return i;
+}
+
+// ---- Diff-based ANSI emitter ---------------------------------------------
+// Compares current cell grid to caller-supplied shadow buffers (chars / fg /
+// bg / attrs of the same shape), emits cursor-position + SGR + char only
+// for cells that changed, copies current → shadow as it goes.
+//
+// On `force=true` (first frame, post-resize, or whenever the caller knows
+// the shadow is stale) we emit \x1b[H\x1b[2J + every cell. Either way the
+// shadow ends up matching the buffer, so subsequent frames are honest diffs.
+//
+// Cursor model: we track where we believe the terminal cursor is. When we
+// emit a char that lands at column == width, the terminal auto-wraps to
+// (0, row+1). We mirror that in our model so the next cursor-position skip
+// stays correct.
+
+inline fn rgbaEq(a: ansi.RGBA, b: ansi.RGBA) bool {
+    return a[0] == b[0] and a[1] == b[1] and a[2] == b[2];
+}
+
+export fn bufferEncodeAnsiDiff(
+    bufferPtr: *buffer.OptimizedBuffer,
+    shadowCharsPtr: [*]u32,
+    shadowFgPtr: [*]ansi.RGBA,
+    shadowBgPtr: [*]ansi.RGBA,
+    shadowAttrsPtr: [*]u32,
+    outPtr: [*]u8,
+    outLen: usize,
+    force: bool,
+) usize {
+    const out = outPtr[0..outLen];
+    var i: usize = 0;
+
+    if (force) i = appendStr(out, i, "\x1b[H\x1b[2J");
+
+    var lastFgR: i32 = -1;
+    var lastFgG: i32 = -1;
+    var lastFgB: i32 = -1;
+    var lastBgR: i32 = -1;
+    var lastBgG: i32 = -1;
+    var lastBgB: i32 = -1;
+    var lastAttrs: i32 = -1;
+    var termRow: i32 = -1; // unknown
+    var termCol: i32 = -1;
+
+    const width = bufferPtr.width;
+    const height = bufferPtr.height;
+    const chars = bufferPtr.getCharPtr();
+    const fg_arr = bufferPtr.getFgPtr();
+    const bg_arr = bufferPtr.getBgPtr();
+    const attrs_arr = bufferPtr.getAttributesPtr();
+
+    var y: u32 = 0;
+    while (y < height) : (y += 1) {
+        var x: u32 = 0;
+        while (x < width) : (x += 1) {
+            const idx: usize = @as(usize, y) * width + x;
+            const cellChar = chars[idx];
+            const cellFg = fg_arr[idx];
+            const cellBg = bg_arr[idx];
+            const cellAttrs = attrs_arr[idx] & 0xFF;
+
+            const changed = force or
+                cellChar != shadowCharsPtr[idx] or
+                cellAttrs != (shadowAttrsPtr[idx] & 0xFF) or
+                !rgbaEq(cellFg, shadowFgPtr[idx]) or
+                !rgbaEq(cellBg, shadowBgPtr[idx]);
+
+            if (!changed) continue;
+
+            const wantRow: i32 = @intCast(y);
+            const wantCol: i32 = @intCast(x);
+            if (termRow != wantRow or termCol != wantCol) {
+                i = appendStr(out, i, "\x1b[");
+                i = appendInt(out, i, @intCast(wantRow + 1));
+                i = appendChar(out, i, ';');
+                i = appendInt(out, i, @intCast(wantCol + 1));
+                i = appendChar(out, i, 'H');
+                termRow = wantRow;
+                termCol = wantCol;
+            }
+
+            const fr = clampUnit(cellFg[0]);
+            const fgg = clampUnit(cellFg[1]);
+            const fb = clampUnit(cellFg[2]);
+            const br = clampUnit(cellBg[0]);
+            const bgr = clampUnit(cellBg[1]);
+            const bb = clampUnit(cellBg[2]);
+            const ai: i32 = @intCast(cellAttrs);
+
+            if (ai != lastAttrs) {
+                i = appendStr(out, i, "\x1b[0m");
+                if (ai & 1 != 0) i = appendStr(out, i, "\x1b[1m");
+                if (ai & 2 != 0) i = appendStr(out, i, "\x1b[2m");
+                if (ai & 4 != 0) i = appendStr(out, i, "\x1b[3m");
+                if (ai & 8 != 0) i = appendStr(out, i, "\x1b[4m");
+                if (ai & 32 != 0) i = appendStr(out, i, "\x1b[7m");
+                lastAttrs = ai;
+                lastFgR = -1; lastFgG = -1; lastFgB = -1;
+                lastBgR = -1; lastBgG = -1; lastBgB = -1;
+            }
+            if (fr != lastFgR or fgg != lastFgG or fb != lastFgB) {
+                i = appendStr(out, i, "\x1b[38;2;");
+                i = appendInt(out, i, @intCast(fr));
+                i = appendChar(out, i, ';');
+                i = appendInt(out, i, @intCast(fgg));
+                i = appendChar(out, i, ';');
+                i = appendInt(out, i, @intCast(fb));
+                i = appendChar(out, i, 'm');
+                lastFgR = fr; lastFgG = fgg; lastFgB = fb;
+            }
+            if (br != lastBgR or bgr != lastBgG or bb != lastBgB) {
+                i = appendStr(out, i, "\x1b[48;2;");
+                i = appendInt(out, i, @intCast(br));
+                i = appendChar(out, i, ';');
+                i = appendInt(out, i, @intCast(bgr));
+                i = appendChar(out, i, ';');
+                i = appendInt(out, i, @intCast(bb));
+                i = appendChar(out, i, 'm');
+                lastBgR = br; lastBgG = bgr; lastBgB = bb;
+            }
+
+            i = appendCodepoint(out, i, cellChar);
+
+            // Update cursor model — auto-wrap on right edge.
+            termCol += 1;
+            if (termCol >= @as(i32, @intCast(width))) {
+                termCol = 0;
+                termRow += 1;
+            }
+
+            // Commit to shadow.
+            shadowCharsPtr[idx] = cellChar;
+            shadowFgPtr[idx] = cellFg;
+            shadowBgPtr[idx] = cellBg;
+            shadowAttrsPtr[idx] = cellAttrs;
+
+            if (i >= out.len) return i;
+        }
+    }
+
     i = appendStr(out, i, "\x1b[0m");
     return i;
 }

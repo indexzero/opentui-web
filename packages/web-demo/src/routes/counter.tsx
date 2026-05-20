@@ -35,8 +35,9 @@ function Counter() {
     return () => window.clearInterval(id)
   }, [])
 
-  const { hostRef, status, error, fps } = useOpentuiTerminal({
+  const { hostRef, status, error, fps, bytesPerFrame, encoderMode } = useOpentuiTerminal({
     hideCursor: true,
+    encoderMode: 'diff',
     background: '#0b0b14',
     draw: ({ buf, t }) => {
       buf.clear(BG)
@@ -83,6 +84,8 @@ function Counter() {
       subtitle={`React setState driving opentui · ${count}`}
       status={status}
       fps={fps}
+      bytesPerFrame={bytesPerFrame}
+      encoderMode={encoderMode}
       error={error}
       hostRef={hostRef}
     />

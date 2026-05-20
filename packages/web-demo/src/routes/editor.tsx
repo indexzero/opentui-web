@@ -86,8 +86,9 @@ function Editor() {
     seededRef.current = false
   }, [])
 
-  const { hostRef, status, error, fps } = useOpentuiTerminal({
+  const { hostRef, status, error, fps, bytesPerFrame, encoderMode } = useOpentuiTerminal({
     hideCursor: true,
+    encoderMode: 'diff',
     onData: (data, { opentui }) => {
       if (!ebRef.current) {
         ebRef.current = OpentuiEditBuffer.create(opentui, { widthMethod: 'unicode' })
@@ -173,6 +174,8 @@ function Editor() {
       subtitle={`type into me · WASM EditBuffer · ${stats.lines}L / ${stats.chars}c`}
       status={status}
       fps={fps}
+      bytesPerFrame={bytesPerFrame}
+      encoderMode={encoderMode}
       error={error}
       hostRef={hostRef}
     />
