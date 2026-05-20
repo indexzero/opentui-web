@@ -51,7 +51,7 @@ Move between demos with the tabs at the top. Switch variants with the toolbar. E
 | `/layout` | A flex layout (sidebar + metrics + activity + editor + plasma) computed by yoga, embedded inside the cell grid. Proves yoga-driven scenes work alongside interactive widgets. |
 | `/life` | Conway's Game of Life with click-and-drag painting. Canvas2d only — its pointer-to-cell mapping isn't built for the other variants. |
 
-`/` redirects to `/plasma`.
+`/` redirects to `/layout`.
 
 ---
 
