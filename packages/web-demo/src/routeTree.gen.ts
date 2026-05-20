@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PlasmaWorkerRouteImport } from './routes/plasma-worker'
+import { Route as PlasmaCanvasRouteImport } from './routes/plasma-canvas'
 import { Route as PlasmaRouteImport } from './routes/plasma'
 import { Route as MatrixRouteImport } from './routes/matrix'
 import { Route as LayoutRouteImport } from './routes/layout'
@@ -21,6 +22,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const PlasmaWorkerRoute = PlasmaWorkerRouteImport.update({
   id: '/plasma-worker',
   path: '/plasma-worker',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlasmaCanvasRoute = PlasmaCanvasRouteImport.update({
+  id: '/plasma-canvas',
+  path: '/plasma-canvas',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PlasmaRoute = PlasmaRouteImport.update({
@@ -67,6 +73,7 @@ export interface FileRoutesByFullPath {
   '/layout': typeof LayoutRoute
   '/matrix': typeof MatrixRoute
   '/plasma': typeof PlasmaRoute
+  '/plasma-canvas': typeof PlasmaCanvasRoute
   '/plasma-worker': typeof PlasmaWorkerRoute
 }
 export interface FileRoutesByTo {
@@ -77,6 +84,7 @@ export interface FileRoutesByTo {
   '/layout': typeof LayoutRoute
   '/matrix': typeof MatrixRoute
   '/plasma': typeof PlasmaRoute
+  '/plasma-canvas': typeof PlasmaCanvasRoute
   '/plasma-worker': typeof PlasmaWorkerRoute
 }
 export interface FileRoutesById {
@@ -88,6 +96,7 @@ export interface FileRoutesById {
   '/layout': typeof LayoutRoute
   '/matrix': typeof MatrixRoute
   '/plasma': typeof PlasmaRoute
+  '/plasma-canvas': typeof PlasmaCanvasRoute
   '/plasma-worker': typeof PlasmaWorkerRoute
 }
 export interface FileRouteTypes {
@@ -100,6 +109,7 @@ export interface FileRouteTypes {
     | '/layout'
     | '/matrix'
     | '/plasma'
+    | '/plasma-canvas'
     | '/plasma-worker'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -110,6 +120,7 @@ export interface FileRouteTypes {
     | '/layout'
     | '/matrix'
     | '/plasma'
+    | '/plasma-canvas'
     | '/plasma-worker'
   id:
     | '__root__'
@@ -120,6 +131,7 @@ export interface FileRouteTypes {
     | '/layout'
     | '/matrix'
     | '/plasma'
+    | '/plasma-canvas'
     | '/plasma-worker'
   fileRoutesById: FileRoutesById
 }
@@ -131,6 +143,7 @@ export interface RootRouteChildren {
   LayoutRoute: typeof LayoutRoute
   MatrixRoute: typeof MatrixRoute
   PlasmaRoute: typeof PlasmaRoute
+  PlasmaCanvasRoute: typeof PlasmaCanvasRoute
   PlasmaWorkerRoute: typeof PlasmaWorkerRoute
 }
 
@@ -141,6 +154,13 @@ declare module '@tanstack/react-router' {
       path: '/plasma-worker'
       fullPath: '/plasma-worker'
       preLoaderRoute: typeof PlasmaWorkerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/plasma-canvas': {
+      id: '/plasma-canvas'
+      path: '/plasma-canvas'
+      fullPath: '/plasma-canvas'
+      preLoaderRoute: typeof PlasmaCanvasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/plasma': {
@@ -203,6 +223,7 @@ const rootRouteChildren: RootRouteChildren = {
   LayoutRoute: LayoutRoute,
   MatrixRoute: MatrixRoute,
   PlasmaRoute: PlasmaRoute,
+  PlasmaCanvasRoute: PlasmaCanvasRoute,
   PlasmaWorkerRoute: PlasmaWorkerRoute,
 }
 export const routeTree = rootRouteImport
