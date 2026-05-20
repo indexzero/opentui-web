@@ -2,14 +2,21 @@
 // etc.) imports this and calls runWorker(kernelFn). Keeps the message protocol
 // and lifecycle in one place.
 
-import { OpentuiBuffer, encodeBufferAsAnsiBytes, loadOpentui } from 'opentui-browser'
+import {
+  OpentuiBuffer,
+  encodeBufferAsAnsiBytes,
+  encodeBufferAsAnsiDiffBytes,
+  loadOpentui,
+} from 'opentui-browser'
 import type { OpentuiExports } from 'opentui-browser'
 
-export type WorkerKernel = (buf: OpentuiBuffer, t: number, opentui: OpentuiExports) => void
+export type WorkerKernel = (buf: OpentuiBuffer, t: number, frame: number, opentui: OpentuiExports) => void
+
+export type EncoderMode = 'full' | 'diff'
 
 type FrameReq = { type: 'frame'; t: number; seq: number; clearScreen?: boolean }
 type ResizeReq = { type: 'resize'; cols: number; rows: number }
-type InitReq = { type: 'init' }
+type InitReq = { type: 'init'; encoderMode?: EncoderMode }
 type DisposeReq = { type: 'dispose' }
 type InReq = FrameReq | ResizeReq | InitReq | DisposeReq
 
@@ -27,6 +34,8 @@ export function runWorker(kernel: WorkerKernel) {
   let opentui: OpentuiExports | null = null
   let buf: OpentuiBuffer | null = null
   let firstFrame = true
+  let frame = 0
+  let encoderMode: EncoderMode = 'full'
 
   function post(msg: OutReply, transfer?: Transferable[]) {
     if (transfer) self.postMessage(msg, transfer)
@@ -38,6 +47,7 @@ export function runWorker(kernel: WorkerKernel) {
     try {
       if (msg.type === 'init') {
         opentui = await loadOpentui()
+        encoderMode = msg.encoderMode ?? 'full'
         post({ type: 'ready' })
       } else if (msg.type === 'resize') {
         if (!opentui) return
@@ -45,17 +55,22 @@ export function runWorker(kernel: WorkerKernel) {
           buf = OpentuiBuffer.create(opentui, msg.cols, msg.rows, { id: 'worker', widthMethod: 'unicode' })
           buf.clear([0, 0, 0, 1])
           firstFrame = true
+          frame = 0
         } else if (msg.cols !== buf.width || msg.rows !== buf.height) {
           buf.resize(msg.cols, msg.rows)
           buf.clear([0, 0, 0, 1])
           firstFrame = true
+          frame = 0
         }
       } else if (msg.type === 'frame') {
         if (!buf || !opentui) return
         const start = performance.now()
-        kernel(buf, msg.t, opentui)
-        const bytes = encodeBufferAsAnsiBytes(buf, { clearScreen: msg.clearScreen ?? firstFrame })
+        kernel(buf, msg.t, frame, opentui)
+        const bytes = encoderMode === 'diff'
+          ? encodeBufferAsAnsiDiffBytes(buf, { clearScreen: msg.clearScreen ?? firstFrame })
+          : encodeBufferAsAnsiBytes(buf, { clearScreen: msg.clearScreen ?? firstFrame })
         firstFrame = false
+        frame++
         const computeMs = performance.now() - start
         post({ type: 'frame', seq: msg.seq, bytes: bytes.buffer, computeMs }, [bytes.buffer])
       } else if (msg.type === 'dispose') {

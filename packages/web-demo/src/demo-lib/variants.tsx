@@ -11,9 +11,22 @@ import { Terminal as XtermTerminal } from '@xterm/xterm'
 import { FitAddon as XtermFitAddon } from '@xterm/addon-fit'
 import { WebglAddon } from '@xterm/addon-webgl'
 import '@xterm/xterm/css/xterm.css'
-import { CanvasPainter, OpentuiBuffer, encodeBufferAsAnsi, loadOpentui } from 'opentui-browser'
+import {
+  CanvasPainter,
+  OpentuiBuffer,
+  encodeBufferAsAnsi,
+  encodeBufferAsAnsiDiff,
+  loadOpentui,
+} from 'opentui-browser'
 
 export type DrawKernel = (buf: OpentuiBuffer, t: number, frame: number) => void
+export type EncoderMode = 'full' | 'diff'
+
+function encode(buf: OpentuiBuffer, mode: EncoderMode, clearScreen: boolean): string {
+  return mode === 'diff'
+    ? encodeBufferAsAnsiDiff(buf, { clearScreen })
+    : encodeBufferAsAnsi(buf, { clearScreen })
+}
 
 let ghosttyReady: Promise<void> | null = null
 function ensureGhostty() {
@@ -23,21 +36,35 @@ function ensureGhostty() {
 
 // ---- shared chrome --------------------------------------------------------
 
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`
+}
+
 interface VariantFrameProps {
   hostRef: RefObject<HTMLDivElement | null>
   status: 'loading' | 'ready' | 'error'
   fps: number
   error: string | null
   detail?: string
+  bytesPerFrame?: number
+  encoderMode?: EncoderMode
 }
 
-export function VariantFrame({ hostRef, status, fps, error, detail }: VariantFrameProps) {
+export function VariantFrame({ hostRef, status, fps, error, detail, bytesPerFrame, encoderMode }: VariantFrameProps) {
   return (
     <>
       <div className="mb-1 flex items-center justify-end font-mono text-xs text-white/40">
         {detail ? <span className="mr-3">{detail}</span> : null}
         <span className={status === 'ready' ? 'text-[#9ece6a]' : 'text-white/50'}>{status}</span>
         {status === 'ready' ? <span className="ml-3 text-[#7aa2f7]">{fps} fps</span> : null}
+        {status === 'ready' && bytesPerFrame !== undefined && bytesPerFrame > 0 ? (
+          <span className="ml-3 text-white/60">
+            {formatBytes(bytesPerFrame)}/frame
+            {encoderMode === 'diff' ? <span className="ml-1 text-[#bb9af7]">diff</span> : null}
+          </span>
+        ) : null}
         {error ? <span className="ml-3 text-[#f7768e]">{error}</span> : null}
       </div>
       <div ref={hostRef} className="flex-1 overflow-hidden rounded-md border border-white/5" />
@@ -49,13 +76,15 @@ export function VariantFrame({ hostRef, status, fps, error, detail }: VariantFra
 
 interface DrawProps {
   draw: DrawKernel
+  encoderMode?: EncoderMode
 }
 
-export function GhosttyVariant({ draw }: DrawProps) {
+export function GhosttyVariant({ draw, encoderMode = 'full' }: DrawProps) {
   const hostRef = useRef<HTMLDivElement>(null)
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [error, setError] = useState<string | null>(null)
   const [fps, setFps] = useState(0)
+  const [bytesPerFrame, setBytesPerFrame] = useState(0)
   const drawRef = useRef(draw)
   drawRef.current = draw
 
@@ -99,20 +128,27 @@ export function GhosttyVariant({ draw }: DrawProps) {
       setError(null); setStatus('ready')
 
       const startedAt = performance.now()
-      let lastSecond = startedAt, framesThisSecond = 0, firstFrame = true, frame = 0
+      let lastSecond = startedAt, framesThisSecond = 0, firstFrame = true, frame = 0, lastBytes = 0
       const tick = () => {
         if (disposed || !term || !buf) return
         const now = performance.now()
         try {
           drawRef.current(buf, (now - startedAt) / 1000, frame)
-          term.write(encodeBufferAsAnsi(buf, { clearScreen: firstFrame }))
+          const out = encode(buf, encoderMode, firstFrame)
+          lastBytes = out.length
+          term.write(out)
         } catch (e) {
           setError(e instanceof Error ? e.message : String(e)); setStatus('error'); return
         }
         firstFrame = false
         frame++
         framesThisSecond++
-        if (now - lastSecond >= 1000) { setFps(framesThisSecond); framesThisSecond = 0; lastSecond = now }
+        if (now - lastSecond >= 1000) {
+          setFps(framesThisSecond)
+          setBytesPerFrame(lastBytes)
+          framesThisSecond = 0
+          lastSecond = now
+        }
         rafId = requestAnimationFrame(tick)
       }
       rafId = requestAnimationFrame(tick)
@@ -127,23 +163,35 @@ export function GhosttyVariant({ draw }: DrawProps) {
       buf?.destroy()
       term?.dispose()
     }
-  }, [])
+  }, [encoderMode])
 
-  return <VariantFrame hostRef={hostRef} status={status} fps={fps} error={error} detail="ghostty-web · main thread" />
+  return (
+    <VariantFrame
+      hostRef={hostRef}
+      status={status}
+      fps={fps}
+      bytesPerFrame={bytesPerFrame}
+      encoderMode={encoderMode}
+      error={error}
+      detail="ghostty-web · main thread"
+    />
+  )
 }
 
 // ---- ghostty + worker -----------------------------------------------------
 
 interface WorkerProps {
   workerFactory: () => Worker
+  encoderMode?: EncoderMode
 }
 
-export function GhosttyWorkerVariant({ workerFactory }: WorkerProps) {
+export function GhosttyWorkerVariant({ workerFactory, encoderMode = 'full' }: WorkerProps) {
   const hostRef = useRef<HTMLDivElement>(null)
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [error, setError] = useState<string | null>(null)
   const [fps, setFps] = useState(0)
   const [computeMs, setComputeMs] = useState(0)
+  const [bytesPerFrame, setBytesPerFrame] = useState(0)
 
   useEffect(() => {
     let term: GhosttyTerminal | undefined
@@ -155,7 +203,7 @@ export function GhosttyWorkerVariant({ workerFactory }: WorkerProps) {
     let disposed = false
     let workerReady = false
     let nextSeq = 0, inflight = 0
-    let startedAt = 0, lastSecond = 0, framesThisSecond = 0, lastComputeMs = 0
+    let startedAt = 0, lastSecond = 0, framesThisSecond = 0, lastComputeMs = 0, lastBytes = 0
 
     function syncSize() {
       if (!term || !fit || !worker) return
@@ -173,19 +221,25 @@ export function GhosttyWorkerVariant({ workerFactory }: WorkerProps) {
         else if (m.type === 'frame') {
           inflight = Math.max(0, inflight - 1)
           if (!term || disposed) return
-          try { term.write(new Uint8Array(m.bytes)) } catch (err) {
+          try {
+            const bytes = new Uint8Array(m.bytes)
+            lastBytes = bytes.length
+            term.write(bytes)
+          } catch (err) {
             setError(err instanceof Error ? err.message : String(err)); setStatus('error'); return
           }
           lastComputeMs = m.computeMs
           framesThisSecond++
           const now = performance.now()
           if (now - lastSecond >= 1000) {
-            setFps(framesThisSecond); setComputeMs(Math.round(lastComputeMs * 10) / 10)
+            setFps(framesThisSecond)
+            setComputeMs(Math.round(lastComputeMs * 10) / 10)
+            setBytesPerFrame(lastBytes)
             framesThisSecond = 0; lastSecond = now
           }
         } else if (m.type === 'error') { setError(m.message); setStatus('error') }
       }
-      worker.postMessage({ type: 'init' })
+      worker.postMessage({ type: 'init', encoderMode })
 
       term = new GhosttyTerminal({
         fontSize: 13,
@@ -226,18 +280,29 @@ export function GhosttyWorkerVariant({ workerFactory }: WorkerProps) {
       try { term?.write('\x1b[?25h') } catch {}
       term?.dispose()
     }
-  }, [])
+  }, [encoderMode])
 
-  return <VariantFrame hostRef={hostRef} status={status} fps={fps} error={error} detail={`worker compute ${computeMs}ms · 2 frames in flight`} />
+  return (
+    <VariantFrame
+      hostRef={hostRef}
+      status={status}
+      fps={fps}
+      bytesPerFrame={bytesPerFrame}
+      encoderMode={encoderMode}
+      error={error}
+      detail={`worker compute ${computeMs}ms · 2 frames in flight`}
+    />
+  )
 }
 
 // ---- xterm.js -------------------------------------------------------------
 
-export function XtermVariant({ draw }: DrawProps) {
+export function XtermVariant({ draw, encoderMode = 'full' }: DrawProps) {
   const hostRef = useRef<HTMLDivElement>(null)
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [error, setError] = useState<string | null>(null)
   const [fps, setFps] = useState(0)
+  const [bytesPerFrame, setBytesPerFrame] = useState(0)
   const [renderer, setRenderer] = useState<'webgl' | 'canvas'>('webgl')
   const drawRef = useRef(draw)
   drawRef.current = draw
@@ -292,20 +357,26 @@ export function XtermVariant({ draw }: DrawProps) {
       setError(null); setStatus('ready')
 
       const startedAt = performance.now()
-      let lastSecond = startedAt, framesThisSecond = 0, firstFrame = true, frame = 0
+      let lastSecond = startedAt, framesThisSecond = 0, firstFrame = true, frame = 0, lastBytes = 0
       const tick = () => {
         if (disposed || !term || !buf) return
         const now = performance.now()
         try {
           drawRef.current(buf, (now - startedAt) / 1000, frame)
-          term.write(encodeBufferAsAnsi(buf, { clearScreen: firstFrame }))
+          const out = encode(buf, encoderMode, firstFrame)
+          lastBytes = out.length
+          term.write(out)
         } catch (e) {
           setError(e instanceof Error ? e.message : String(e)); setStatus('error'); return
         }
         firstFrame = false
         frame++
         framesThisSecond++
-        if (now - lastSecond >= 1000) { setFps(framesThisSecond); framesThisSecond = 0; lastSecond = now }
+        if (now - lastSecond >= 1000) {
+          setFps(framesThisSecond)
+          setBytesPerFrame(lastBytes)
+          framesThisSecond = 0; lastSecond = now
+        }
         rafId = requestAnimationFrame(tick)
       }
       rafId = requestAnimationFrame(tick)
@@ -320,9 +391,19 @@ export function XtermVariant({ draw }: DrawProps) {
       buf?.destroy()
       term?.dispose()
     }
-  }, [])
+  }, [encoderMode])
 
-  return <VariantFrame hostRef={hostRef} status={status} fps={fps} error={error} detail={`xterm.js v6 · ${renderer}`} />
+  return (
+    <VariantFrame
+      hostRef={hostRef}
+      status={status}
+      fps={fps}
+      bytesPerFrame={bytesPerFrame}
+      encoderMode={encoderMode}
+      error={error}
+      detail={`xterm.js v6 · ${renderer}`}
+    />
+  )
 }
 
 // ---- direct canvas paint --------------------------------------------------
