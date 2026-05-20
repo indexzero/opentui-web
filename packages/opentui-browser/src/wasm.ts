@@ -48,6 +48,7 @@ export interface OpentuiExports {
     attributes: number,
   ): void
   bufferResize(bufferPtr: number, width: number, height: number): void
+  bufferEncodeAnsi(bufferPtr: number, outPtr: number, outLen: number, clearScreen: boolean): number
 
   createEditBuffer(widthMethod: number): number
   destroyEditBuffer(ebPtr: number): void
