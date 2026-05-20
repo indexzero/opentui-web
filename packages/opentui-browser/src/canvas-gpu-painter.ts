@@ -84,6 +84,10 @@ interface AtlasInfo {
 interface PainterOptions {
   fontSize?: number
   fontFamily?: string
+  // When true, after building the atlas, also attach it to the document body
+  // as a fixed-position <img> in the top-right corner so we can inspect what
+  // glyph pixels were uploaded to the GPU. Off by default.
+  debugAtlas?: boolean
 }
 
 function defaultGlyphSet(): number[] {
@@ -112,6 +116,7 @@ export class CanvasGPUPainter {
   private fontSize: number
   private fontFamily: string
   private dpr: number
+  private debugAtlas: boolean
   private instanceCapacity = 0
   private instanceData: Float32Array | null = null
   private ready = false
@@ -126,6 +131,7 @@ export class CanvasGPUPainter {
     this.fontSize = opts.fontSize ?? 13
     this.fontFamily = opts.fontFamily ?? 'ui-monospace, SFMono-Regular, Menlo, monospace'
     this.dpr = window.devicePixelRatio || 1
+    this.debugAtlas = opts.debugAtlas ?? false
     if (!('gpu' in navigator)) {
       throw new Error('CanvasGPUPainter: navigator.gpu unavailable (no WebGPU)')
     }
@@ -211,11 +217,10 @@ export class CanvasGPUPainter {
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     })
 
-    // Nearest filter: no interpolation across texels, which means no chance of
-    // bleeding into the neighboring glyph's pixels at cell boundaries. Trade-off
-    // is that glyph edges are pixel-aligned rather than smoothed — fine for the
-    // dpr-scaled atlas we generate.
-    this.sampler = this.device.createSampler({ magFilter: 'nearest', minFilter: 'nearest' })
+    // Linear filter for smooth glyph edges. Nearest sampling fixed nothing
+    // (artifacts still present) and made text noticeably worse, so back to
+    // linear. The half-texel inset still applies as bleed insurance.
+    this.sampler = this.device.createSampler({ magFilter: 'linear', minFilter: 'linear' })
 
     this.rebuildBindGroup()
     this.ready = true
@@ -264,6 +269,18 @@ export class CanvasGPUPainter {
       { texture },
       [atlasCanvas.width, atlasCanvas.height],
     )
+
+    if (this.debugAtlas) {
+      // Surface the atlas canvas in the page so we can inspect what was
+      // actually uploaded to the GPU. Pinned top-right, scaled down so it
+      // doesn't dominate the viewport.
+      const dbg = atlasCanvas.cloneNode(true) as HTMLCanvasElement
+      dbg.style.cssText = 'position:fixed;top:8px;right:8px;z-index:9999;border:2px solid magenta;background:#222;max-width:50vw;max-height:50vh;image-rendering:pixelated'
+      dbg.dataset.role = 'gpu-atlas-debug'
+      const prev = document.querySelector('[data-role="gpu-atlas-debug"]')
+      if (prev) prev.remove()
+      document.body.appendChild(dbg)
+    }
 
     return { texture, cols: atlasCols, rows: atlasRows, glyphMap, cellPxW, cellPxH }
   }
@@ -343,11 +360,11 @@ export class CanvasGPUPainter {
 
     this.device.queue.writeBuffer(this.instanceBuffer, 0, data.buffer, 0, cellCount * 48)
 
-    // Inset one full texel along each cell — with nearest sampling this is
-    // strictly belt-and-suspenders, but it also keeps us safe if someone
-    // flips the sampler back to linear without thinking about edge bleed.
-    const insetU = 1.0 / (this.atlas.cellPxW * this.dpr)
-    const insetV = 1.0 / (this.atlas.cellPxH * this.dpr)
+    // Half-texel inset — under linear sampling this is the standard atlas-bleed
+    // workaround. Texel center sits exactly at the cell boundary, so the
+    // 4-tap linear filter weights pull purely from the intended cell.
+    const insetU = 0.5 / (this.atlas.cellPxW * this.dpr)
+    const insetV = 0.5 / (this.atlas.cellPxH * this.dpr)
     const uniforms = new Float32Array(8)
     uniforms[0] = this.cellWidth * this.dpr
     uniforms[1] = this.cellHeight * this.dpr
