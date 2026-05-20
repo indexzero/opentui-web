@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 import { Terminal, init as initGhostty } from 'ghostty-web'
 import { OpentuiBuffer, encodeBufferAsAnsi, loadOpentui } from 'opentui-browser'
+import type { RGBA } from 'opentui-browser'
 
 export const Route = createFileRoute('/')({ component: Home })
 
@@ -11,17 +12,50 @@ function ensureGhostty() {
   return ghosttyReady
 }
 
-const COLS = 80
-const ROWS = 20
+const COLS = 100
+const ROWS = 30
+const UPPER_HALF_BLOCK = 0x2580 // ▀  fg = top pixel, bg = bottom pixel
+
+function hsvToRgb(h: number, s: number, v: number): [number, number, number] {
+  const c = v * s
+  const hp = ((h % 360) + 360) % 360 / 60
+  const x = c * (1 - Math.abs((hp % 2) - 1))
+  let r = 0, g = 0, b = 0
+  if (hp < 1) { r = c; g = x }
+  else if (hp < 2) { r = x; g = c }
+  else if (hp < 3) { g = c; b = x }
+  else if (hp < 4) { g = x; b = c }
+  else if (hp < 5) { r = x; b = c }
+  else { r = c; b = x }
+  const m = v - c
+  return [r + m, g + m, b + m]
+}
+
+function plasmaAt(px: number, py: number, t: number): [number, number, number] {
+  const cx = COLS / 2
+  const cy = ROWS
+  const dx = px - cx
+  const dy = py - cy
+  const r = Math.sqrt(dx * dx + dy * dy)
+  const v =
+    Math.sin(px * 0.09 + t * 1.3) +
+    Math.sin(py * 0.13 + t * 1.1) +
+    Math.sin((px + py) * 0.06 + t * 0.7) +
+    Math.sin(r * 0.18 + t * 1.7)
+  const h = (v * 60 + t * 40) % 360
+  return hsvToRgb(h, 0.85, 0.95)
+}
 
 function Home() {
   const hostRef = useRef<HTMLDivElement>(null)
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [error, setError] = useState<string | null>(null)
+  const [fps, setFps] = useState(0)
 
   useEffect(() => {
     let term: Terminal | undefined
     let buf: OpentuiBuffer | undefined
+    let rafId = 0
     let disposed = false
 
     Promise.all([ensureGhostty(), loadOpentui()])
@@ -29,67 +63,71 @@ function Home() {
         if (disposed || !hostRef.current) return
 
         term = new Terminal({
-          fontSize: 14,
+          fontSize: 13,
           fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
           cols: COLS,
           rows: ROWS + 4,
           theme: {
-            background: '#16161e',
+            background: '#0b0b14',
             foreground: '#c0caf5',
             cursor: '#7aa2f7',
           },
         })
         term.open(hostRef.current)
 
-        buf = OpentuiBuffer.create(opentui, COLS, ROWS, { id: 'demo', widthMethod: 'unicode' })
-        buf.clear([0.09, 0.09, 0.12, 1])
-
-        // Background gradient: cool dark teal → indigo across columns.
-        for (let y = 0; y < ROWS; y++) {
-          for (let x = 0; x < COLS; x++) {
-            const t = x / (COLS - 1)
-            buf.setCell(
-              x,
-              y,
-              0x20,
-              [1, 1, 1, 1],
-              [0.08 + 0.05 * t, 0.09 + 0.02 * t, 0.12 + 0.15 * t, 1],
-              0,
-            )
-          }
-        }
-
-        // Border box drawn via direct cell sets so we exercise setCell + unicode width.
-        const TL = 0x256d, TR = 0x256e, BL = 0x2570, BR = 0x256f, H = 0x2500, V = 0x2502
-        const accent: [number, number, number, number] = [0.74, 0.6, 0.97, 1]
-        const transparent: [number, number, number, number] = [0, 0, 0, 0]
-        for (let x = 1; x < COLS - 1; x++) {
-          buf.setCell(x, 0, H, accent, transparent, 1)
-          buf.setCell(x, ROWS - 1, H, accent, transparent, 1)
-        }
-        for (let y = 1; y < ROWS - 1; y++) {
-          buf.setCell(0, y, V, accent, transparent, 1)
-          buf.setCell(COLS - 1, y, V, accent, transparent, 1)
-        }
-        buf.setCell(0, 0, TL, accent, transparent, 1)
-        buf.setCell(COLS - 1, 0, TR, accent, transparent, 1)
-        buf.setCell(0, ROWS - 1, BL, accent, transparent, 1)
-        buf.setCell(COLS - 1, ROWS - 1, BR, accent, transparent, 1)
-
-        // Text via opentui's grapheme-aware drawText.
-        buf.drawText('opentui WASM → ghostty-web', 3, 2, [1, 1, 1, 1], 1)
-        buf.drawText('end-to-end pipeline live ✓', 3, 4, [0.62, 0.81, 0.42, 1], 0)
-        buf.drawText('• Zig core compiled to wasm32-freestanding', 3, 6, [0.67, 0.69, 0.84, 1], 0)
-        buf.drawText('• OptimizedBuffer.setCell / drawText in the browser', 3, 7, [0.67, 0.69, 0.84, 1], 0)
-        buf.drawText('• cell grid → ANSI in JS → ghostty parser → canvas', 3, 8, [0.67, 0.69, 0.84, 1], 0)
-        buf.drawText('next: emit ANSI inside Zig (renderer.zig in wasm)', 3, 10, [0.65, 0.65, 0.71, 1], 2)
-
-        // Drop the cursor below the buffer and write the encoded ANSI.
-        term.write(encodeBufferAsAnsi(buf, { clearScreen: true }))
-        term.write('\r\nopentui-browser :: live\r\n')
-
+        buf = OpentuiBuffer.create(opentui, COLS, ROWS, { id: 'plasma', widthMethod: 'unicode' })
+        buf.clear([0, 0, 0, 1])
         setError(null)
         setStatus('ready')
+
+        // Hide cursor while the animation drives the viewport.
+        term.write('\x1b[?25l')
+
+        const startedAt = performance.now()
+        let lastSecond = startedAt
+        let framesThisSecond = 0
+        let lastFps = 0
+
+        const tick = () => {
+          if (disposed || !term || !buf) return
+          const now = performance.now()
+          const t = (now - startedAt) / 1000
+
+          // Two vertical pixels per cell via upper-half-block.
+          for (let y = 0; y < ROWS; y++) {
+            for (let x = 0; x < COLS; x++) {
+              const top = plasmaAt(x, y * 2, t)
+              const bot = plasmaAt(x, y * 2 + 1, t)
+              const fg: RGBA = [top[0], top[1], top[2], 1]
+              const bg: RGBA = [bot[0], bot[1], bot[2], 1]
+              buf.setCell(x, y, UPPER_HALF_BLOCK, fg, bg, 0)
+            }
+          }
+
+          // Overlay title and live stats on top of the plasma using opentui's drawText.
+          const label = `  opentui WASM -> ghostty-web :: plasma  ${lastFps.toString().padStart(2, ' ')} fps  `
+          for (let i = 0; i < label.length; i++) {
+            buf.setCell(2 + i, 1, label.charCodeAt(i), [1, 1, 1, 1], [0.04, 0.04, 0.08, 1], 1)
+          }
+          const sub = `  ${COLS}x${ROWS} cells / ${COLS * ROWS * 2} pixels / 60fps target  `
+          for (let i = 0; i < sub.length; i++) {
+            buf.setCell(2 + i, 2, sub.charCodeAt(i), [0.7, 0.74, 0.86, 1], [0.04, 0.04, 0.08, 1], 0)
+          }
+
+          term.write(encodeBufferAsAnsi(buf, { clearScreen: true }))
+
+          framesThisSecond++
+          if (now - lastSecond >= 1000) {
+            lastFps = framesThisSecond
+            setFps(lastFps)
+            framesThisSecond = 0
+            lastSecond = now
+          }
+
+          rafId = requestAnimationFrame(tick)
+        }
+
+        rafId = requestAnimationFrame(tick)
       })
       .catch((err) => {
         setError(err?.message ?? String(err))
@@ -98,18 +136,25 @@ function Home() {
 
     return () => {
       disposed = true
+      if (rafId) cancelAnimationFrame(rafId)
+      if (term) {
+        try {
+          term.write('\x1b[?25h')
+        } catch {}
+      }
       buf?.destroy()
       term?.dispose()
     }
   }, [])
 
   return (
-    <div className="flex h-screen flex-col bg-[#16161e] text-[#c0caf5]">
+    <div className="flex h-screen flex-col bg-[#0b0b14] text-[#c0caf5]">
       <header className="border-b border-white/5 px-4 py-3">
-        <h1 className="font-mono text-sm">open-tui-ghostty-web · demo</h1>
+        <h1 className="font-mono text-sm">open-tui-ghostty-web · plasma demo</h1>
         <p className="font-mono text-xs text-white/40">
           opentui WASM → ghostty-web ·{' '}
           <span className={status === 'ready' ? 'text-[#9ece6a]' : 'text-white/50'}>{status}</span>
+          {status === 'ready' ? <span className="ml-3 text-[#7aa2f7]">{fps} fps</span> : null}
           {error ? <span className="ml-2 text-[#f7768e]">{error}</span> : null}
         </p>
       </header>
