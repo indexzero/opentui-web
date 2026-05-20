@@ -2,17 +2,10 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 import { useOpentuiTerminal } from '../demo-lib/useOpentuiTerminal'
 import { DemoFrame } from '../demo-lib/DemoLayout'
-import {
-  box,
-  custom,
-  drawBar,
-  drawString,
-  fillRect,
-  hsv,
-  layoutAndDraw,
-  text,
-} from 'opentui-browser'
-import type { RGBA, SceneNode } from 'opentui-browser'
+import { drawBar, drawString, fillRect, hsv } from 'opentui-browser'
+import type { RGBA } from 'opentui-browser'
+import { box, custom, layoutAndDraw, text } from 'opentui-browser/layout'
+import type { SceneNode } from 'opentui-browser/layout'
 
 export const Route = createFileRoute('/layout')({ component: LayoutDemo })
 

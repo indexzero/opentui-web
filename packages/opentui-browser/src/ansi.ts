@@ -39,3 +39,16 @@ export function encodeBufferAsAnsi(buf: OpentuiBuffer, opts: EncodeOptions = {})
   const written = buf.mod.bufferEncodeAnsi(buf.ptr, s.ptr, s.len, opts.clearScreen ?? true)
   return decoder.decode(new Uint8Array(buf.mod.memory.buffer, s.ptr, written))
 }
+
+// Like encodeBufferAsAnsi but returns a fresh Uint8Array backed by its own
+// ArrayBuffer. The caller can postMessage() it as a transferable so a worker
+// can hand bytes to the main thread with no copy. Slightly slower than the
+// string version for same-thread use because of the extra Uint8Array.set().
+export function encodeBufferAsAnsiBytes(buf: OpentuiBuffer, opts: EncodeOptions = {}): Uint8Array {
+  const need = buf.width * buf.height * 64 + 64
+  const s = scratch(buf.mod, need)
+  const written = buf.mod.bufferEncodeAnsi(buf.ptr, s.ptr, s.len, opts.clearScreen ?? true)
+  const out = new Uint8Array(written)
+  out.set(new Uint8Array(buf.mod.memory.buffer, s.ptr, written))
+  return out
+}

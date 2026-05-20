@@ -1,11 +1,15 @@
+// Core entry point — wasm + buffer + edit-buffer + ansi + draw helpers.
+// Deliberately does NOT re-export from ./layout because that pulls yoga-layout,
+// which has a module-level `await loadYoga()` that has problems in some
+// environments (we hit it from a Worker). Consumers who want layout should
+// import from 'opentui-browser/layout' directly.
+
 export { loadOpentui } from './wasm'
 export type { OpentuiExports } from './wasm'
 export { OpentuiBuffer } from './buffer'
 export type { RGBA } from './buffer'
 export { OpentuiEditBuffer } from './edit-buffer'
 export type { Cursor } from './edit-buffer'
-export { encodeBufferAsAnsi } from './ansi'
+export { encodeBufferAsAnsi, encodeBufferAsAnsiBytes } from './ansi'
 export type { EncodeOptions } from './ansi'
 export { drawBar, drawBorder, drawSparkline, drawString, fillRect, hsv } from './draw-helpers'
-export { box, custom, layoutAndDraw, text } from './layout'
-export type { BoxProps, CustomProps, Rect, SceneNode, TextProps } from './layout'

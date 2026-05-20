@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PlasmaWorkerRouteImport } from './routes/plasma-worker'
 import { Route as PlasmaRouteImport } from './routes/plasma'
 import { Route as MatrixRouteImport } from './routes/matrix'
 import { Route as LayoutRouteImport } from './routes/layout'
@@ -17,6 +18,11 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CounterRouteImport } from './routes/counter'
 import { Route as IndexRouteImport } from './routes/index'
 
+const PlasmaWorkerRoute = PlasmaWorkerRouteImport.update({
+  id: '/plasma-worker',
+  path: '/plasma-worker',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PlasmaRoute = PlasmaRouteImport.update({
   id: '/plasma',
   path: '/plasma',
@@ -61,6 +67,7 @@ export interface FileRoutesByFullPath {
   '/layout': typeof LayoutRoute
   '/matrix': typeof MatrixRoute
   '/plasma': typeof PlasmaRoute
+  '/plasma-worker': typeof PlasmaWorkerRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -70,6 +77,7 @@ export interface FileRoutesByTo {
   '/layout': typeof LayoutRoute
   '/matrix': typeof MatrixRoute
   '/plasma': typeof PlasmaRoute
+  '/plasma-worker': typeof PlasmaWorkerRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -80,6 +88,7 @@ export interface FileRoutesById {
   '/layout': typeof LayoutRoute
   '/matrix': typeof MatrixRoute
   '/plasma': typeof PlasmaRoute
+  '/plasma-worker': typeof PlasmaWorkerRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,6 +100,7 @@ export interface FileRouteTypes {
     | '/layout'
     | '/matrix'
     | '/plasma'
+    | '/plasma-worker'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -100,6 +110,7 @@ export interface FileRouteTypes {
     | '/layout'
     | '/matrix'
     | '/plasma'
+    | '/plasma-worker'
   id:
     | '__root__'
     | '/'
@@ -109,6 +120,7 @@ export interface FileRouteTypes {
     | '/layout'
     | '/matrix'
     | '/plasma'
+    | '/plasma-worker'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -119,10 +131,18 @@ export interface RootRouteChildren {
   LayoutRoute: typeof LayoutRoute
   MatrixRoute: typeof MatrixRoute
   PlasmaRoute: typeof PlasmaRoute
+  PlasmaWorkerRoute: typeof PlasmaWorkerRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/plasma-worker': {
+      id: '/plasma-worker'
+      path: '/plasma-worker'
+      fullPath: '/plasma-worker'
+      preLoaderRoute: typeof PlasmaWorkerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/plasma': {
       id: '/plasma'
       path: '/plasma'
@@ -183,6 +203,7 @@ const rootRouteChildren: RootRouteChildren = {
   LayoutRoute: LayoutRoute,
   MatrixRoute: MatrixRoute,
   PlasmaRoute: PlasmaRoute,
+  PlasmaWorkerRoute: PlasmaWorkerRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

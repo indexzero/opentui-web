@@ -11,6 +11,10 @@
       "types": "./src/index.ts",
       "import": "./src/index.ts"
     },
+    "./layout": {
+      "types": "./src/layout.ts",
+      "import": "./src/layout.ts"
+    },
     "./opentui.wasm": "./src/opentui.wasm"
   },
   "files": [
