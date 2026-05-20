@@ -211,7 +211,11 @@ export class CanvasGPUPainter {
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     })
 
-    this.sampler = this.device.createSampler({ magFilter: 'linear', minFilter: 'linear' })
+    // Nearest filter: no interpolation across texels, which means no chance of
+    // bleeding into the neighboring glyph's pixels at cell boundaries. Trade-off
+    // is that glyph edges are pixel-aligned rather than smoothed — fine for the
+    // dpr-scaled atlas we generate.
+    this.sampler = this.device.createSampler({ magFilter: 'nearest', minFilter: 'nearest' })
 
     this.rebuildBindGroup()
     this.ready = true
@@ -339,12 +343,11 @@ export class CanvasGPUPainter {
 
     this.device.queue.writeBuffer(this.instanceBuffer, 0, data.buffer, 0, cellCount * 48)
 
-    // Inset half a texel along each cell to avoid edge bleed under linear
-    // sampling. cellPxW/H are post-dpr atlas pixels per cell, so half-pixel
-    // = 0.5 / (atlasCols * cellPxW) in normalized U coords (then *atlasCols
-    // because the UV math multiplies by atlasGrid).
-    const insetU = 0.5 / (this.atlas.cellPxW * this.dpr)
-    const insetV = 0.5 / (this.atlas.cellPxH * this.dpr)
+    // Inset one full texel along each cell — with nearest sampling this is
+    // strictly belt-and-suspenders, but it also keeps us safe if someone
+    // flips the sampler back to linear without thinking about edge bleed.
+    const insetU = 1.0 / (this.atlas.cellPxW * this.dpr)
+    const insetV = 1.0 / (this.atlas.cellPxH * this.dpr)
     const uniforms = new Float32Array(8)
     uniforms[0] = this.cellWidth * this.dpr
     uniforms[1] = this.cellHeight * this.dpr
