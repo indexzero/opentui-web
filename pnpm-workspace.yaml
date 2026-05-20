@@ -1,0 +1,4 @@
+packages:
+  - packages/opentui/packages/*
+  - packages/opentui-browser
+  - packages/web-demo

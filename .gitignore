@@ -1,0 +1,16 @@
+node_modules/
+.DS_Store
+
+# zig build artifacts
+zig-out/
+.zig-cache/
+**/zig-out/
+**/.zig-cache/
+
+# zig build outputs and dist
+packages/opentui/packages/*/dist/
+packages/opentui/packages/*/lib/
+packages/opentui/packages/core/src/zig/lib/
+
+# screenshots from local browser checks
+/tmp/web-demo-screens/

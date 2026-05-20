@@ -1,0 +1,34 @@
+{
+  "name": "@opentui",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "packages/solid/examples"
+  ],
+  "scripts": {
+    "build": "cd packages/core && bun run build && cd ../solid && bun run build && cd ../react && bun run build",
+    "fmt": "oxfmt --write .",
+    "fmt:check": "oxfmt --check .",
+    "lint": "oxlint .",
+    "lint:ci": "oxlint . --deny-warnings",
+    "lint:fix": "oxlint --fix .",
+    "pre-publish": "bun scripts/pre-publish.ts",
+    "publish": "bun run pre-publish && bun run publish:core && bun run publish:react && bun run publish:solid",
+    "publish:core": "cd packages/core && bun run publish",
+    "publish:react": "cd packages/react && bun run publish",
+    "publish:solid": "cd packages/solid && bun run publish",
+    "prepare-release": "bun scripts/prepare-release.ts",
+    "test": "bun run --filter '@opentui/core' --filter '@opentui/solid' --filter '@opentui/react' --if-present test",
+    "test:nodejs": "bun run --filter '@opentui/core' --filter '@opentui/solid' --filter '@opentui/react' --if-present test:nodejs",
+    "test:dist": "bun scripts/dist-test.ts --build packages/*/dist-test/*"
+  },
+  "devDependencies": {
+    "commander": "^13.1.0",
+    "oxfmt": "0.41.0",
+    "oxlint": "1.56.0",
+    "vitest": "4.1.3"
+  },
+  "trustedDependencies": [
+    "koffi"
+  ]
+}
