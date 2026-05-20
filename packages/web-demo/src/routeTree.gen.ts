@@ -13,7 +13,9 @@ import { Route as PlasmaWorkerRouteImport } from './routes/plasma-worker'
 import { Route as PlasmaCanvasRouteImport } from './routes/plasma-canvas'
 import { Route as PlasmaRouteImport } from './routes/plasma'
 import { Route as MatrixRouteImport } from './routes/matrix'
+import { Route as LifeRouteImport } from './routes/life'
 import { Route as LayoutRouteImport } from './routes/layout'
+import { Route as FireRouteImport } from './routes/fire'
 import { Route as EditorRouteImport } from './routes/editor'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CounterRouteImport } from './routes/counter'
@@ -39,9 +41,19 @@ const MatrixRoute = MatrixRouteImport.update({
   path: '/matrix',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LifeRoute = LifeRouteImport.update({
+  id: '/life',
+  path: '/life',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LayoutRoute = LayoutRouteImport.update({
   id: '/layout',
   path: '/layout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FireRoute = FireRouteImport.update({
+  id: '/fire',
+  path: '/fire',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EditorRoute = EditorRouteImport.update({
@@ -70,7 +82,9 @@ export interface FileRoutesByFullPath {
   '/counter': typeof CounterRoute
   '/dashboard': typeof DashboardRoute
   '/editor': typeof EditorRoute
+  '/fire': typeof FireRoute
   '/layout': typeof LayoutRoute
+  '/life': typeof LifeRoute
   '/matrix': typeof MatrixRoute
   '/plasma': typeof PlasmaRoute
   '/plasma-canvas': typeof PlasmaCanvasRoute
@@ -81,7 +95,9 @@ export interface FileRoutesByTo {
   '/counter': typeof CounterRoute
   '/dashboard': typeof DashboardRoute
   '/editor': typeof EditorRoute
+  '/fire': typeof FireRoute
   '/layout': typeof LayoutRoute
+  '/life': typeof LifeRoute
   '/matrix': typeof MatrixRoute
   '/plasma': typeof PlasmaRoute
   '/plasma-canvas': typeof PlasmaCanvasRoute
@@ -93,7 +109,9 @@ export interface FileRoutesById {
   '/counter': typeof CounterRoute
   '/dashboard': typeof DashboardRoute
   '/editor': typeof EditorRoute
+  '/fire': typeof FireRoute
   '/layout': typeof LayoutRoute
+  '/life': typeof LifeRoute
   '/matrix': typeof MatrixRoute
   '/plasma': typeof PlasmaRoute
   '/plasma-canvas': typeof PlasmaCanvasRoute
@@ -106,7 +124,9 @@ export interface FileRouteTypes {
     | '/counter'
     | '/dashboard'
     | '/editor'
+    | '/fire'
     | '/layout'
+    | '/life'
     | '/matrix'
     | '/plasma'
     | '/plasma-canvas'
@@ -117,7 +137,9 @@ export interface FileRouteTypes {
     | '/counter'
     | '/dashboard'
     | '/editor'
+    | '/fire'
     | '/layout'
+    | '/life'
     | '/matrix'
     | '/plasma'
     | '/plasma-canvas'
@@ -128,7 +150,9 @@ export interface FileRouteTypes {
     | '/counter'
     | '/dashboard'
     | '/editor'
+    | '/fire'
     | '/layout'
+    | '/life'
     | '/matrix'
     | '/plasma'
     | '/plasma-canvas'
@@ -140,7 +164,9 @@ export interface RootRouteChildren {
   CounterRoute: typeof CounterRoute
   DashboardRoute: typeof DashboardRoute
   EditorRoute: typeof EditorRoute
+  FireRoute: typeof FireRoute
   LayoutRoute: typeof LayoutRoute
+  LifeRoute: typeof LifeRoute
   MatrixRoute: typeof MatrixRoute
   PlasmaRoute: typeof PlasmaRoute
   PlasmaCanvasRoute: typeof PlasmaCanvasRoute
@@ -177,11 +203,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MatrixRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/life': {
+      id: '/life'
+      path: '/life'
+      fullPath: '/life'
+      preLoaderRoute: typeof LifeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/layout': {
       id: '/layout'
       path: '/layout'
       fullPath: '/layout'
       preLoaderRoute: typeof LayoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/fire': {
+      id: '/fire'
+      path: '/fire'
+      fullPath: '/fire'
+      preLoaderRoute: typeof FireRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/editor': {
@@ -220,7 +260,9 @@ const rootRouteChildren: RootRouteChildren = {
   CounterRoute: CounterRoute,
   DashboardRoute: DashboardRoute,
   EditorRoute: EditorRoute,
+  FireRoute: FireRoute,
   LayoutRoute: LayoutRoute,
+  LifeRoute: LifeRoute,
   MatrixRoute: MatrixRoute,
   PlasmaRoute: PlasmaRoute,
   PlasmaCanvasRoute: PlasmaCanvasRoute,
