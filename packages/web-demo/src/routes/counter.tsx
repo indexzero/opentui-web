@@ -2,15 +2,13 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState, useRef } from 'react'
 import { useOpentuiTerminal } from '../demo-lib/useOpentuiTerminal'
 import { DemoFrame } from '../demo-lib/DemoLayout'
+import { hsv } from '../demo-lib/draw-primitives'
 import type { RGBA } from 'opentui-browser'
 
 export const Route = createFileRoute('/counter')({ component: Counter })
 
-const COLS = 60
-const ROWS = 14
 const BG: RGBA = [0.04, 0.04, 0.07, 1]
 
-// 5x7 glyph font for 0-9 — one bit per pixel, MSB = leftmost.
 const FONT_W = 5
 const FONT_H = 7
 const DIGITS: Record<string, number[]> = {
@@ -33,27 +31,23 @@ function Counter() {
   countRef.current = count
 
   useEffect(() => {
-    // Real React state updates driving an opentui-rendered scene. Mirrors
-    // opentui's own packages/react/examples/counter.tsx.
     const id = window.setInterval(() => setCount((c) => c + 1), 50)
     return () => window.clearInterval(id)
   }, [])
 
   const { hostRef, status, error, fps } = useOpentuiTerminal({
-    cols: COLS,
-    rows: ROWS,
     hideCursor: true,
     background: '#0b0b14',
     draw: ({ buf, t }) => {
       buf.clear(BG)
+      const cols = buf.width
+      const rows = buf.height
       const text = String(countRef.current)
       const glyphW = FONT_W + 1
-      const startX = Math.floor((COLS - text.length * glyphW) / 2)
-      const startY = Math.floor((ROWS - FONT_H) / 2)
+      const startX = Math.floor((cols - text.length * glyphW) / 2)
+      const startY = Math.floor((rows - FONT_H) / 2)
 
-      // Color pulses with time so you can see the redraw cadence even when count stops.
-      const hue = (t * 60) % 360
-      const rgb = hsv(hue, 0.55, 1)
+      const rgb = hsv((t * 60) % 360, 0.55, 1)
       const fg: RGBA = [rgb[0], rgb[1], rgb[2], 1]
 
       for (let i = 0; i < text.length; i++) {
@@ -72,7 +66,7 @@ function Counter() {
       const label = ' React useState -> opentui WASM '
       for (let i = 0; i < label.length; i++) {
         buf.setCell(
-          Math.floor((COLS - label.length) / 2) + i,
+          Math.floor((cols - label.length) / 2) + i,
           startY + FONT_H + 2,
           label.charCodeAt(i),
           [0.7, 0.74, 0.86, 1],
@@ -93,19 +87,4 @@ function Counter() {
       hostRef={hostRef}
     />
   )
-}
-
-function hsv(h: number, s: number, v: number): [number, number, number] {
-  const c = v * s
-  const hp = (((h % 360) + 360) % 360) / 60
-  const x = c * (1 - Math.abs((hp % 2) - 1))
-  let r = 0, g = 0, b = 0
-  if (hp < 1) { r = c; g = x }
-  else if (hp < 2) { r = x; g = c }
-  else if (hp < 3) { g = c; b = x }
-  else if (hp < 4) { g = x; b = c }
-  else if (hp < 5) { r = x; b = c }
-  else { r = c; b = x }
-  const m = v - c
-  return [r + m, g + m, b + m]
 }

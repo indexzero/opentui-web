@@ -51,11 +51,12 @@ export function drawString(
   bg: RGBA,
   attrs = 0,
 ) {
-  for (let i = 0; i < text.length; i++) {
-    const cp = text.codePointAt(i)
+  let col = 0
+  for (const ch of text) {
+    const cp = ch.codePointAt(0)
     if (cp === undefined) continue
-    buf.setCell(x + i, y, cp, fg, bg, attrs)
-    if (cp > 0xffff) i++ // skip low-surrogate
+    buf.setCell(x + col, y, cp, fg, bg, attrs)
+    col++
   }
 }
 
