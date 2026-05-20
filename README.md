@@ -1,5 +1,7 @@
 # opentui-web
 
+**[→ Live demo](https://rbby.dev/opentui-web/)**
+
 > **Proof of concept.** Not a library. Not stable. A renderer-comparison lab. Edges are rough, some variants have visible artefacts, the API surface will move. Read the [Status](#status-proof-of-concept) section below before depending on anything in here.
 
 An exploration of [opentui](https://github.com/justjake/opentui)'s Zig core compiled to WebAssembly and driven from the browser through several different rendering pipelines, so the trade-offs can be compared side-by-side. Each demo runs the same kernel through every pipeline; a toolbar at the top of every demo lets you switch between them live and watch the FPS and bytes-per-frame readouts move.
