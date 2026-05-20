@@ -52,6 +52,21 @@ export function snapshotBufferTransferable(buf: OpentuiBuffer): {
   }
 }
 
+// Format a cell grid as plain text — one line per row, trailing spaces
+// trimmed. Powers the canvas-variant Cmd+C "copy visible" handler.
+export function gridToText(grid: CellGrid): string {
+  const out: string[] = []
+  for (let y = 0; y < grid.height; y++) {
+    let line = ''
+    for (let x = 0; x < grid.width; x++) {
+      const cp = grid.chars[y * grid.width + x] ?? 0x20
+      line += cp === 0 || cp > 0x10ffff ? ' ' : String.fromCodePoint(cp)
+    }
+    out.push(line.replace(/ +$/, ''))
+  }
+  return out.join('\n').replace(/\n+$/, '\n')
+}
+
 export function gridFromMessage(msg: {
   width: number
   height: number

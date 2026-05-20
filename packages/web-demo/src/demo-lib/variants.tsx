@@ -19,9 +19,24 @@ import {
   encodeBufferAsAnsi,
   encodeBufferAsAnsiDiff,
   gridFromMessage,
+  gridToText,
   loadOpentui,
 } from 'opentui-browser'
 import type { CellGrid, OpentuiExports } from 'opentui-browser'
+
+// Copy the buffer's visible text to the clipboard. Triggered by Cmd/Ctrl+C
+// in the canvas variants; the terminal-emulator variants get this for free
+// from ghostty/xterm's own selection model.
+function copyGridToClipboard(grid: CellGrid | null) {
+  if (!grid) return
+  navigator.clipboard.writeText(gridToText(grid)).catch(() => {
+    /* clipboard write blocked — ignore */
+  })
+}
+
+function isCopyCombo(e: KeyboardEvent): boolean {
+  return (e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'c'
+}
 
 export type DrawKernel = (buf: OpentuiBuffer, t: number, frame: number, opentui: OpentuiExports) => void
 export type EncoderMode = 'full' | 'diff'
@@ -486,20 +501,24 @@ export function CanvasVariant({ draw, onInput }: DrawProps) {
       // Keyboard input — translate DOM KeyboardEvents into the same byte
       // sequences ghostty / xterm produce via term.onData. The canvas needs
       // focus to receive keys; we make it focusable + auto-focus.
-      if (onInputRef.current) {
-        canvas.tabIndex = 0
-        canvas.style.outline = 'none'
-        canvas.focus()
-        keyHandler = (e: KeyboardEvent) => {
-          if (document.activeElement !== canvas) return
-          const bytes = keyEventToBytes(e)
-          if (bytes !== null) {
-            e.preventDefault()
-            onInputRef.current?.(bytes)
-          }
+      canvas.tabIndex = 0
+      canvas.style.outline = 'none'
+      canvas.focus()
+      keyHandler = (e: KeyboardEvent) => {
+        if (document.activeElement !== canvas) return
+        if (isCopyCombo(e)) {
+          e.preventDefault()
+          copyGridToClipboard(buf ? buf.snapshot() : null)
+          return
         }
-        window.addEventListener('keydown', keyHandler)
+        if (!onInputRef.current) return
+        const bytes = keyEventToBytes(e)
+        if (bytes !== null) {
+          e.preventDefault()
+          onInputRef.current(bytes)
+        }
       }
+      window.addEventListener('keydown', keyHandler)
 
       setError(null); setStatus('ready')
 
@@ -566,6 +585,7 @@ function CanvasWorkerVariantInner({ workerFactory, kind, forwardInput }: CanvasW
     let workerReady = false
     let nextSeq = 0, inflight = 0
     let lastSecond = performance.now(), framesThisSecond = 0, lastComputeMs = 0
+    let lastGrid: CellGrid | null = null
 
     function syncSize() {
       if (!painter || !hostRef.current || !worker) return
@@ -604,6 +624,7 @@ function CanvasWorkerVariantInner({ workerFactory, kind, forwardInput }: CanvasW
         if (!painter || disposed) return
         try {
           const grid: CellGrid = gridFromMessage(m.cells)
+          lastGrid = grid
           painter.paint(grid)
         } catch (err) {
           setError(err instanceof Error ? err.message : String(err)); setStatus('error'); return
@@ -623,20 +644,24 @@ function CanvasWorkerVariantInner({ workerFactory, kind, forwardInput }: CanvasW
     }
     worker.postMessage({ type: 'init', outputMode: 'cells' })
 
-    if (forwardInput) {
-      canvas.tabIndex = 0
-      canvas.style.outline = 'none'
-      canvas.focus()
-      keyHandler = (e: KeyboardEvent) => {
-        if (document.activeElement !== canvas) return
-        const bytes = keyEventToBytes(e)
-        if (bytes !== null) {
-          e.preventDefault()
-          worker?.postMessage({ type: 'input', data: bytes })
-        }
+    canvas.tabIndex = 0
+    canvas.style.outline = 'none'
+    canvas.focus()
+    keyHandler = (e: KeyboardEvent) => {
+      if (document.activeElement !== canvas) return
+      if (isCopyCombo(e)) {
+        e.preventDefault()
+        copyGridToClipboard(lastGrid)
+        return
       }
-      window.addEventListener('keydown', keyHandler)
+      if (!forwardInput) return
+      const bytes = keyEventToBytes(e)
+      if (bytes !== null) {
+        e.preventDefault()
+        worker?.postMessage({ type: 'input', data: bytes })
+      }
     }
+    window.addEventListener('keydown', keyHandler)
 
     ro = new ResizeObserver(() => {
       if (resizeTimeout) window.clearTimeout(resizeTimeout)
@@ -762,20 +787,24 @@ export function CanvasGLVariant({ draw, onInput }: DrawProps) {
       })
       ro.observe(hostRef.current)
 
-      if (onInputRef.current) {
-        canvas.tabIndex = 0
-        canvas.style.outline = 'none'
-        canvas.focus()
-        keyHandler = (e: KeyboardEvent) => {
-          if (document.activeElement !== canvas) return
-          const bytes = keyEventToBytes(e)
-          if (bytes !== null) {
-            e.preventDefault()
-            onInputRef.current?.(bytes)
-          }
+      canvas.tabIndex = 0
+      canvas.style.outline = 'none'
+      canvas.focus()
+      keyHandler = (e: KeyboardEvent) => {
+        if (document.activeElement !== canvas) return
+        if (isCopyCombo(e)) {
+          e.preventDefault()
+          copyGridToClipboard(buf ? buf.snapshot() : null)
+          return
         }
-        window.addEventListener('keydown', keyHandler)
+        if (!onInputRef.current) return
+        const bytes = keyEventToBytes(e)
+        if (bytes !== null) {
+          e.preventDefault()
+          onInputRef.current(bytes)
+        }
       }
+      window.addEventListener('keydown', keyHandler)
 
       setError(null); setStatus('ready')
 

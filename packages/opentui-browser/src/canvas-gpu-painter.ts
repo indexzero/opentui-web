@@ -14,14 +14,17 @@ struct VsOut {
   @location(0) uv: vec2f,
   @location(1) fg: vec4f,
   @location(2) bg: vec4f,
-  @location(3) @interpolate(flat) glyph: f32,
+  // All 4 vertices of a quad share the same glyph value (instance attribute),
+  // so interpolation choice is moot. Use the default to avoid Chrome's
+  // 'flat needs sampling' validation that some versions require.
+  @location(3) glyph: f32,
 };
 
 struct Uniforms {
   cellSize: vec2f,
   resolution: vec2f,
   atlasGrid: vec2f,
-  _pad: vec2f,
+  pad0: vec2f,
 };
 
 @group(0) @binding(0) var<uniform> U: Uniforms;
@@ -54,8 +57,10 @@ fn vs_main(
 
 @fragment
 fn fs_main(in: VsOut) -> @location(0) vec4f {
-  if (in.glyph < 0.0) { return in.bg; }
+  // textureSample must be called from uniform control flow — i.e. before
+  // any branch on per-fragment data. Sample first, branch second.
   let a = textureSample(atlas, samp, in.uv).a;
+  if (in.glyph < 0.0) { return in.bg; }
   return mix(in.bg, in.fg, a);
 }
 `
@@ -127,6 +132,15 @@ export class CanvasGPUPainter {
     const adapter = await gpu.requestAdapter()
     if (!adapter) throw new Error('CanvasGPUPainter: no adapter')
     this.device = await adapter.requestDevice()
+    this.device.lost.then((info) => {
+      // eslint-disable-next-line no-console
+      console.error('[CanvasGPUPainter] device lost:', info.reason, info.message)
+    })
+    this.device.addEventListener('uncapturederror', (event: Event) => {
+      const err = (event as GPUUncapturedErrorEvent).error
+      // eslint-disable-next-line no-console
+      console.error('[CanvasGPUPainter] uncaptured error:', err.message ?? err)
+    })
     this.format = gpu.getPreferredCanvasFormat()
     this.context = this.canvas.getContext('webgpu') as unknown as GPUCanvasContext
     if (!this.context) throw new Error('CanvasGPUPainter: webgpu context unavailable')
@@ -137,6 +151,13 @@ export class CanvasGPUPainter {
     this.cellHeight = this.atlas.cellPxH
 
     const module = this.device.createShaderModule({ code: WGSL })
+    // Surface compile errors from the shader (would be silent otherwise).
+    const compInfo = await module.getCompilationInfo()
+    if (compInfo.messages.some((m) => m.type === 'error')) {
+      const msgs = compInfo.messages.map((m) => `${m.type} L${m.lineNum}: ${m.message}`).join('\n')
+      throw new Error(`WGSL shader compile failed:\n${msgs}`)
+    }
+    this.device.pushErrorScope('validation')
     this.pipeline = this.device.createRenderPipeline({
       layout: 'auto',
       vertex: {
@@ -167,6 +188,10 @@ export class CanvasGPUPainter {
       },
       primitive: { topology: 'triangle-strip' },
     })
+    const pipelineError = await this.device.popErrorScope()
+    if (pipelineError) {
+      throw new Error(`createRenderPipeline failed: ${pipelineError.message}`)
+    }
 
     this.quadBuffer = this.device.createBuffer({
       size: 32,
