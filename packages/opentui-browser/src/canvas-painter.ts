@@ -25,6 +25,11 @@ const ATTR_UNDERLINE = 1 << 3
 export interface CanvasPainterOptions {
   fontSize?: number
   fontFamily?: string
+  // washe local fix (#104): painter-wide default vertical alignment of a
+  // glyph within its (taller) cell box. 'top' (default) is byte-identical to
+  // upstream; 'middle'/'bottom' derive the offset from metrics (see paint()).
+  // A per-cell VALIGN in attr bits 4-5 overrides this default.
+  cellVAlign?: 'top' | 'middle' | 'bottom'
 }
 
 export class CanvasPainter {
@@ -33,6 +38,9 @@ export class CanvasPainter {
   private fontSize: number
   private fontFamily: string
   private dpr: number
+  // washe local fix (#104): default vertical-align as a small enum
+  // (0=top, 1=middle, 2=bottom); used when a cell's VALIGN bits are 0.
+  private cellVAlignDefault: number
 
   cellWidth = 0
   cellHeight = 0
@@ -43,6 +51,7 @@ export class CanvasPainter {
     this.canvas = canvas
     this.fontSize = opts.fontSize ?? 13
     this.fontFamily = opts.fontFamily ?? 'ui-monospace, SFMono-Regular, Menlo, monospace'
+    this.cellVAlignDefault = ({ top: 0, middle: 1, bottom: 2 })[opts.cellVAlign ?? 'top']
     this.dpr = window.devicePixelRatio || 1
     const ctx = canvas.getContext('2d', { alpha: false })
     if (!ctx) throw new Error('CanvasPainter: 2d context unavailable')
@@ -149,13 +158,22 @@ export class CanvasPainter {
           ctx.fillStyle = fgKey
           lastFg = fgKey
         }
+        // washe local fix (#104): per-cell vertical alignment. VALIGN rides
+        // attr bits 4-5 (0=top, 1=middle, 2=bottom); 0 falls back to the
+        // painter-wide default. The offset is DERIVED FROM METRICS — never a
+        // hardcoded pixel — so it self-scales with fontSize/dpr. va=0 ⇒
+        // voff=0, byte-identical to upstream for non-opted cells.
+        const vaBits = (ai >> 4) & 3
+        const va = vaBits !== 0 ? vaBits : this.cellVAlignDefault
+        const voff =
+          va === 1 ? Math.round((cellH - this.fontSize) / 2) : va === 2 ? cellH - this.fontSize : 0
         if (ch !== 0x20) {
           const wantFont = fontFor(ai, baseFont, this.fontSize, this.fontFamily)
           if (wantFont !== lastFontStyle) {
             ctx.font = wantFont
             lastFontStyle = wantFont
           }
-          ctx.fillText(stringForCp(ch), x * cellW, py)
+          ctx.fillText(stringForCp(ch), x * cellW, py + voff)
         }
         if (ai & ATTR_UNDERLINE) {
           // washe local fix (#6): pin the underline just under the glyph
@@ -163,8 +181,9 @@ export class CanvasPainter {
           // spans py..py+fontSize while the cell is taller (cellH ≈
           // 1.2×fontSize) — drawing at the cell bottom floated the rule
           // well below the words. py+fontSize-4 tucks it right under the
-          // text (clamped into the cell).
-          const uy = py + Math.min(cellH - 1, this.fontSize - 4)
+          // text (clamped into the cell). It tracks voff so a vertically
+          // shifted glyph keeps its underline (clamped to the cell bottom).
+          const uy = Math.min(py + cellH - 1, py + voff + Math.min(cellH - 1, this.fontSize - 4))
           ctx.fillRect(x * cellW, uy, cellW, 1)
         }
       }
