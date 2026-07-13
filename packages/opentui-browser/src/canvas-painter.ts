@@ -30,6 +30,12 @@ export interface CanvasPainterOptions {
   // upstream; 'middle'/'bottom' derive the offset from metrics (see paint()).
   // A per-cell VALIGN in attr bits 4-5 overrides this default.
   cellVAlign?: 'top' | 'middle' | 'bottom'
+  // washe local fix (canvas-host overhaul): the page background painted under
+  // the whole backing store before each frame. The grid is whole cells (floor),
+  // so a sub-cell remainder strip on the right/bottom would otherwise render as
+  // the opaque-black default of getContext('2d',{alpha:false}). Default '#000'
+  // is byte-identical to the prior implicit clear for callers that don't set it.
+  clearColor?: string
 }
 
 export class CanvasPainter {
@@ -37,10 +43,18 @@ export class CanvasPainter {
   private ctx: CanvasRenderingContext2D
   private fontSize: number
   private fontFamily: string
-  private dpr: number
   // washe local fix (#104): default vertical-align as a small enum
   // (0=top, 1=middle, 2=bottom); used when a cell's VALIGN bits are 0.
   private cellVAlignDefault: number
+  // washe local fix (canvas-host overhaul): page bg for the pre-frame clear.
+  private clearColor: string
+  // washe local fix (canvas-host overhaul): last measured CSS px of the canvas,
+  // set by setViewport. Used to stretch the LAST row/column's cell background out
+  // to the canvas edge so edge-touching bands (substrate, code block, wc-bar)
+  // are full-bleed instead of stopping at the whole-cell grid edge (cols*cellW <
+  // cssW leaves a sub-cell strip). Default 0 ⇒ legacy callers see no extension.
+  private cssWidth = 0
+  private cssHeight = 0
 
   cellWidth = 0
   cellHeight = 0
@@ -52,7 +66,7 @@ export class CanvasPainter {
     this.fontSize = opts.fontSize ?? 13
     this.fontFamily = opts.fontFamily ?? 'ui-monospace, SFMono-Regular, Menlo, monospace'
     this.cellVAlignDefault = ({ top: 0, middle: 1, bottom: 2 })[opts.cellVAlign ?? 'top']
-    this.dpr = window.devicePixelRatio || 1
+    this.clearColor = opts.clearColor ?? '#000'
     const ctx = canvas.getContext('2d', { alpha: false })
     if (!ctx) throw new Error('CanvasPainter: 2d context unavailable')
     this.ctx = ctx
@@ -78,19 +92,36 @@ export class CanvasPainter {
     return { cols, rows }
   }
 
-  // Resize the canvas backing store + CSS size to match cols × rows. Idempotent.
+  // washe local fix (canvas-host overhaul): resize() now tracks ONLY the cell
+  // grid (cols/rows). CSS owns the canvas box (the host styles it
+  // absolute;inset:0;width/height:100%) and the host drives the backing store +
+  // transform via setViewport() from MEASURED device px. The defensive paint()
+  // path calls this on buffer/grid drift, so it must NEVER touch canvas.style.*,
+  // the backing store, or the transform — doing so would re-introduce R-1 (a
+  // CSS-px ↔ device-px mismatch). Grid-only, so the cols/rows early-return is
+  // dropped: the device-px sizing that DOES need to fire on dpr/CSS changes with
+  // an unchanged grid lives in setViewport, behind no such guard.
   resize(cols: number, rows: number) {
-    if (cols === this.cols && rows === this.rows) return
     this.cols = cols
     this.rows = rows
-    const cssW = cols * this.cellWidth
-    const cssH = rows * this.cellHeight
-    this.canvas.width = Math.ceil(cssW * this.dpr)
-    this.canvas.height = Math.ceil(cssH * this.dpr)
-    this.canvas.style.width = `${cssW}px`
-    this.canvas.style.height = `${cssH}px`
-    // setTransform replaces (vs scale which accumulates) — safe to call on every resize.
-    this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0)
+  }
+
+  // washe local fix (canvas-host overhaul): size the backing store to EXACT
+  // device px (measured by the host's ResizeObserver device-pixel-content-box)
+  // and set the CSS→device transform so cell coords stay in CSS px while text
+  // rasterizes crisp. Owns the backing store + transform ONLY — never
+  // canvas.style.* (CSS owns the box). Setting canvas.width/height RESETS the 2D
+  // context, so font/baseline/transform are (re)established here afterward.
+  setViewport(deviceW: number, deviceH: number, cssW: number, cssH: number) {
+    if (this.canvas.width !== deviceW || this.canvas.height !== deviceH) {
+      this.canvas.width = deviceW
+      this.canvas.height = deviceH
+    }
+    this.cssWidth = cssW
+    this.cssHeight = cssH
+    // Per-axis ratio from MEASURED dims (not devicePixelRatio, which is lossy at
+    // fractional dpr / zoom). setTransform replaces — safe to call every resize.
+    this.ctx.setTransform(deviceW / cssW, 0, 0, deviceH / cssH, 0, 0)
     this.ctx.font = `${this.fontSize}px ${this.fontFamily}`
     this.ctx.textBaseline = 'top'
   }
@@ -107,6 +138,20 @@ export class CanvasPainter {
     const cellH = this.cellHeight
     const ctx = this.ctx
 
+    // washe local fix (canvas-host overhaul): clear the FULL backing store to
+    // the page bg before any cells — UNCONDITIONALLY (before any guard) so even
+    // a defensive/no-op frame leaves bg, not black. With alpha:false unpainted
+    // pixels are opaque black; the whole-cell grid (floor) leaves a sub-cell
+    // remainder strip on the right/bottom that would otherwise read black and
+    // fail the ≥80% paint-coverage invariant. Cleared in DEVICE space (identity
+    // transform) so it covers every backing-store pixel regardless of the
+    // CSS-space transform; also kills the first-frame flash after a resize.
+    ctx.save()
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
+    ctx.fillStyle = this.clearColor
+    ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
+    ctx.restore()
+
     let lastBg = ''
     let lastFg = ''
     let lastFontStyle = ''
@@ -116,6 +161,15 @@ export class CanvasPainter {
     // before moving on, which keeps memory access patterns linear.
     for (let y = 0; y < height; y++) {
       const py = y * cellH
+      // washe local fix (canvas-host overhaul): the cell grid is whole cells, so
+      // a sub-cell remainder can sit between the last row/column and the canvas
+      // edge. This pass runs UNDER the CSS→device transform, so we extend in CSS
+      // px (cssWidth/cssHeight, the context's coordinate space) — NOT device px —
+      // to stretch the LAST row/column's bg to the edge. Edge-touching bands
+      // (substrate, code block, wc-bar) become full-bleed; page-bg cells just
+      // extend page bg (invisible). cssWidth/cssHeight default 0 for legacy
+      // callers that never call setViewport, so Math.max keeps the plain cellW/cellH.
+      const rowH = y === height - 1 ? Math.max(cellH, this.cssHeight - py) : cellH
       for (let x = 0; x < width; x++) {
         const i = y * width + x
         const fi = i * 4
@@ -127,7 +181,8 @@ export class CanvasPainter {
           ctx.fillStyle = bgKey
           lastBg = bgKey
         }
-        ctx.fillRect(x * cellW, py, cellW, cellH)
+        const colW = x === width - 1 ? Math.max(cellW, this.cssWidth - x * cellW) : cellW
+        ctx.fillRect(x * cellW, py, colW, rowH)
       }
     }
 
