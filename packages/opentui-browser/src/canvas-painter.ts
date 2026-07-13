@@ -138,7 +138,13 @@ export class CanvasPainter {
         const fr = (fg[fi]! * 255) | 0
         const fgg = (fg[fi + 1]! * 255) | 0
         const fb = (fg[fi + 2]! * 255) | 0
-        const fgKey = `rgb(${fr},${fgg},${fb})`
+        // washe local fix: honor the per-cell fg alpha (fg[fi+3]) so the
+        // renderer can fade text in word-by-word (LH10 per-word reveal).
+        // The 2D context's bg is opaque, so an rgba glyph composites over
+        // the already-drawn background — a true per-cell opacity fade.
+        const fa = fg[fi + 3]!
+        const fgKey =
+          fa >= 1 ? `rgb(${fr},${fgg},${fb})` : `rgba(${fr},${fgg},${fb},${fa})`
         if (fgKey !== lastFg) {
           ctx.fillStyle = fgKey
           lastFg = fgKey
