@@ -158,10 +158,14 @@ export class CanvasPainter {
           ctx.fillText(stringForCp(ch), x * cellW, py)
         }
         if (ai & ATTR_UNDERLINE) {
-          // washe local fix (#4): cellH - 2 (was cellH - 1) lifts the
-          // rule a pixel off the very bottom edge so it reads as an
-          // underline, not a cell border.
-          ctx.fillRect(x * cellW, py + cellH - 2, cellW, 1)
+          // washe local fix (#6): pin the underline just under the glyph
+          // baseline, not the cell bottom. textBaseline is 'top', so text
+          // spans py..py+fontSize while the cell is taller (cellH ≈
+          // 1.2×fontSize) — drawing at the cell bottom floated the rule
+          // well below the words. py+fontSize-4 tucks it right under the
+          // text (clamped into the cell).
+          const uy = py + Math.min(cellH - 1, this.fontSize - 4)
+          ctx.fillRect(x * cellW, uy, cellW, 1)
         }
       }
     }
