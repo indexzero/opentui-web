@@ -127,8 +127,13 @@ export class CanvasPainter {
       for (let x = 0; x < width; x++) {
         const i = y * width + x
         const ch = chars[i]!
-        if (ch === 0 || ch === 0x20) continue
         const ai = attrs[i]! & 0xff
+        // washe local fix (#4): empty cells draw nothing, but an
+        // underlined SPACE must still draw its rule so a multi-word link
+        // underlines continuously across the spaces. Only the truly-blank
+        // fast path (space with no underline) is skipped.
+        if (ch === 0) continue
+        if (ch === 0x20 && !(ai & ATTR_UNDERLINE)) continue
         const fi = i * 4
         const fr = (fg[fi]! * 255) | 0
         const fgg = (fg[fi + 1]! * 255) | 0
@@ -138,14 +143,19 @@ export class CanvasPainter {
           ctx.fillStyle = fgKey
           lastFg = fgKey
         }
-        const wantFont = fontFor(ai, baseFont, this.fontSize, this.fontFamily)
-        if (wantFont !== lastFontStyle) {
-          ctx.font = wantFont
-          lastFontStyle = wantFont
+        if (ch !== 0x20) {
+          const wantFont = fontFor(ai, baseFont, this.fontSize, this.fontFamily)
+          if (wantFont !== lastFontStyle) {
+            ctx.font = wantFont
+            lastFontStyle = wantFont
+          }
+          ctx.fillText(stringForCp(ch), x * cellW, py)
         }
-        ctx.fillText(stringForCp(ch), x * cellW, py)
         if (ai & ATTR_UNDERLINE) {
-          ctx.fillRect(x * cellW, py + cellH - 1, cellW, 1)
+          // washe local fix (#4): cellH - 2 (was cellH - 1) lifts the
+          // rule a pixel off the very bottom edge so it reads as an
+          // underline, not a cell border.
+          ctx.fillRect(x * cellW, py + cellH - 2, cellW, 1)
         }
       }
     }
