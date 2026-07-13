@@ -26,6 +26,11 @@ const ATTR_UNDERLINE = 1 << 3
 // u8 and this painter masks attrs & 0xff, so bit 7 round-trips. Drawn below as
 // a rule through the glyph's vertical middle (UNDERLINE alone can't strike).
 const ATTR_STRIKETHROUGH = 1 << 7
+// washe local fix (#178): bottom-flush. A last-row cell with this bit anchors at
+// its natural cellH against the bottom edge instead of stretching up to fill the
+// sub-cell remainder — the wc-bar reads one cell tall AND flush. Bit 6 is free
+// (bold=0, italic=2, underline=3, valign=4-5, strike=7) and survives attrs&0xff.
+const ATTR_FLUSH_BOTTOM = 1 << 6
 
 export interface CanvasPainterOptions {
   fontSize?: number
@@ -162,6 +167,11 @@ export class CanvasPainter {
     let lastFontStyle = ''
     const baseFont = `${this.fontSize}px ${this.fontFamily}`
 
+    // washe local fix (#178): the bottom sub-cell remainder (cssHeight not an
+    // exact multiple of cellH). Cells flagged FLUSH_BOTTOM on the last row
+    // bottom-anchor at their natural cellH across this gap (see below).
+    const rem = this.cssHeight > 0 ? Math.max(0, this.cssHeight - height * cellH) : 0
+
     // Two-pass-per-row: backgrounds first, then chars. Same row both passes
     // before moving on, which keeps memory access patterns linear.
     for (let y = 0; y < height; y++) {
@@ -187,7 +197,17 @@ export class CanvasPainter {
           lastBg = bgKey
         }
         const colW = x === width - 1 ? Math.max(cellW, this.cssWidth - x * cellW) : cellW
-        ctx.fillRect(x * cellW, py, colW, rowH)
+        // washe local fix (#178): a FLUSH_BOTTOM cell on the last row anchors at
+        // its natural cellH against the BOTTOM edge (py+rem .. cssHeight) instead
+        // of stretching the whole cell up by the remainder — the wc-bar stays one
+        // cell tall AND sits flush. The remainder strip above keeps the page-bg
+        // clear (invisible). Non-flagged last-row cells keep the full-bleed
+        // stretch (substrate, fullscreen effects, edge-to-edge code panels).
+        if (y === height - 1 && (attrs[i]! & 0xff & ATTR_FLUSH_BOTTOM) !== 0) {
+          ctx.fillRect(x * cellW, py + rem, colW, cellH)
+        } else {
+          ctx.fillRect(x * cellW, py, colW, rowH)
+        }
       }
     }
 
@@ -197,6 +217,10 @@ export class CanvasPainter {
         const i = y * width + x
         const ch = chars[i]!
         const ai = attrs[i]! & 0xff
+        // washe local fix (#178): a FLUSH_BOTTOM last-row cell draws its glyph
+        // shifted down by the remainder so it stays centered in the bottom-
+        // anchored band (matches the bg fillRect above). Non-flagged cells use py.
+        const pyc = y === height - 1 && (ai & ATTR_FLUSH_BOTTOM) !== 0 ? py + rem : py
         // washe local fix (#4): empty cells draw nothing, but an
         // underlined SPACE must still draw its rule so a multi-word link
         // underlines continuously across the spaces. Only the truly-blank
@@ -235,7 +259,7 @@ export class CanvasPainter {
             ctx.font = wantFont
             lastFontStyle = wantFont
           }
-          ctx.fillText(stringForCp(ch), x * cellW, py + voff)
+          ctx.fillText(stringForCp(ch), x * cellW, pyc + voff)
         }
         if (ai & ATTR_UNDERLINE) {
           // washe local fix (#6): pin the underline just under the glyph
@@ -245,7 +269,7 @@ export class CanvasPainter {
           // well below the words. py+fontSize-4 tucks it right under the
           // text (clamped into the cell). It tracks voff so a vertically
           // shifted glyph keeps its underline (clamped to the cell bottom).
-          const uy = Math.min(py + cellH - 1, py + voff + Math.min(cellH - 1, this.fontSize - 4))
+          const uy = Math.min(pyc + cellH - 1, pyc + voff + Math.min(cellH - 1, this.fontSize - 4))
           ctx.fillRect(x * cellW, uy, cellW, 1)
         }
         if (ai & ATTR_STRIKETHROUGH) {
@@ -255,8 +279,8 @@ export class CanvasPainter {
           // the glyph spans py+voff..py+voff+fontSize; half the font height
           // lands the rule across the letterforms. Clamped into the cell.
           const sy = Math.min(
-            py + cellH - 1,
-            py + voff + Math.round(this.fontSize / 2),
+            pyc + cellH - 1,
+            pyc + voff + Math.round(this.fontSize / 2),
           )
           ctx.fillRect(x * cellW, sy, cellW, 1)
         }
