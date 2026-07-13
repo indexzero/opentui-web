@@ -21,6 +21,11 @@ import type { CellGrid } from './cell-grid'
 const ATTR_BOLD = 1 << 0
 const ATTR_ITALIC = 1 << 2
 const ATTR_UNDERLINE = 1 << 3
+// washe local fix (#148): GFM strikethrough. Matches opentui core's
+// TextAttributes.STRIKETHROUGH (1<<7); the cell buffer stores attributes as a
+// u8 and this painter masks attrs & 0xff, so bit 7 round-trips. Drawn below as
+// a rule through the glyph's vertical middle (UNDERLINE alone can't strike).
+const ATTR_STRIKETHROUGH = 1 << 7
 
 export interface CanvasPainterOptions {
   fontSize?: number
@@ -196,8 +201,10 @@ export class CanvasPainter {
         // underlined SPACE must still draw its rule so a multi-word link
         // underlines continuously across the spaces. Only the truly-blank
         // fast path (space with no underline) is skipped.
+        // washe local fix (#148): a STRUCK space must likewise draw its rule so
+        // strikethrough runs continuously across inter-word spaces.
         if (ch === 0) continue
-        if (ch === 0x20 && !(ai & ATTR_UNDERLINE)) continue
+        if (ch === 0x20 && !(ai & (ATTR_UNDERLINE | ATTR_STRIKETHROUGH))) continue
         const fi = i * 4
         const fr = (fg[fi]! * 255) | 0
         const fgg = (fg[fi + 1]! * 255) | 0
@@ -240,6 +247,18 @@ export class CanvasPainter {
           // shifted glyph keeps its underline (clamped to the cell bottom).
           const uy = Math.min(py + cellH - 1, py + voff + Math.min(cellH - 1, this.fontSize - 4))
           ctx.fillRect(x * cellW, uy, cellW, 1)
+        }
+        if (ai & ATTR_STRIKETHROUGH) {
+          // washe local fix (#148): a rule through the glyph's vertical MIDDLE
+          // (≈ the x-height center), tracking voff like the underline so a
+          // valign-shifted glyph keeps its strike. textBaseline is 'top', so
+          // the glyph spans py+voff..py+voff+fontSize; half the font height
+          // lands the rule across the letterforms. Clamped into the cell.
+          const sy = Math.min(
+            py + cellH - 1,
+            py + voff + Math.round(this.fontSize / 2),
+          )
+          ctx.fillRect(x * cellW, sy, cellW, 1)
         }
       }
     }
