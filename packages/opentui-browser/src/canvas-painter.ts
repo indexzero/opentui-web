@@ -70,6 +70,17 @@ export class CanvasPainter {
   cellHeight = 0
   cols = 0
   rows = 0
+  // washe local fix (#6/#148, engine-independent baseline): pixel offsets — from
+  // the glyph's top (textBaseline='top' anchor) — at which the underline (#6) and
+  // strikethrough (#148) rules are drawn. Historically these were hardcoded
+  // (fontSize-4, fontSize/2), an ascent assumption calibrated on Blink; WebKit's
+  // anchor→baseline distance for the same font is larger, so the rules landed
+  // above the baseline and crossed the letterforms. Now MEASURED per engine in
+  // measureCell() (with a fallback to the old constants). Derived once at
+  // construction, alongside cellWidth/cellHeight; if a runtime fontSize/
+  // fontFamily setter is ever added it must re-run measureCell to re-derive these.
+  private underlineOffset = 0
+  private strikeOffset = 0
 
   constructor(canvas: HTMLCanvasElement, opts: CanvasPainterOptions = {}) {
     this.canvas = canvas
@@ -93,6 +104,36 @@ export class CanvasPainter {
     // Round to integer pixel grid; otherwise per-cell drift accumulates and rows misalign.
     this.cellWidth = Math.max(1, Math.round(m.width))
     this.cellHeight = Math.max(1, Math.round(this.fontSize * 1.2))
+    // washe local fix (#6/#148, engine-independent baseline): measure the
+    // alphabetic baseline THIS engine will actually draw instead of assuming it.
+    // With textBaseline='top' the top of the glyph sits at the anchor; 'M' has no
+    // descender, so its actualBoundingBoxDescent is exactly the anchor→baseline
+    // distance as rendered (larger on WebKit than the old Blink-tuned fontSize-4).
+    // Underline sits 1px under that baseline; strike rides the x-height center.
+    const bfd = m.actualBoundingBoxDescent
+    // x-height = the INK-BOX HEIGHT of 'x' (ascent+descent = total box extent,
+    // baseline-independent). 'x' has no ascender/descender, so its bounding-box
+    // height IS the x-height. NB: actualBoundingBoxAscent ALONE is measured from
+    // the textBaseline='top' anchor and is ≤ 0 for 'x' (its ink sits BELOW the
+    // top line), so the ascent+descent SUM — not the ascent — is what yields the
+    // height on every engine; the strike then sits at baseline − ½ x-height.
+    const xm = this.ctx.measureText('x')
+    const xHeight = (xm.actualBoundingBoxAscent ?? 0) + (xm.actualBoundingBoxDescent ?? 0)
+    if (bfd && bfd > 0) {
+      // Ceiling cellHeight-1 = the last row a 1px rule can occupy fully inside
+      // the cell (fillRect at cellHeight-1 spans [cellHeight-1, cellHeight)), so
+      // a large measured baseline is never capped UP onto the glyph — the very
+      // regime this fix targets (WebKit's baseline sits low). Matches the paint
+      // clamp and the fallback. Floor at 0 guards a degenerate tiny fontSize.
+      this.underlineOffset = Math.max(0, Math.min(this.cellHeight - 1, Math.round(bfd) + 1))
+      const halfX = xHeight > 0 ? xHeight / 2 : this.fontSize / 4
+      this.strikeOffset = Math.max(0, Math.round(bfd - halfX))
+    } else {
+      // Ancient engine with no actualBoundingBox* metrics: keep the historical
+      // Blink-calibrated constants so behaviour there is byte-identical to before.
+      this.underlineOffset = Math.min(this.cellHeight - 1, this.fontSize - 4)
+      this.strikeOffset = Math.round(this.fontSize / 2)
+    }
   }
 
   // Compute cols/rows that will fill the given container box.
@@ -262,26 +303,25 @@ export class CanvasPainter {
           ctx.fillText(stringForCp(ch), x * cellW, pyc + voff)
         }
         if (ai & ATTR_UNDERLINE) {
-          // washe local fix (#6): pin the underline just under the glyph
-          // baseline, not the cell bottom. textBaseline is 'top', so text
-          // spans py..py+fontSize while the cell is taller (cellH ≈
-          // 1.2×fontSize) — drawing at the cell bottom floated the rule
-          // well below the words. py+fontSize-4 tucks it right under the
-          // text (clamped into the cell). It tracks voff so a vertically
-          // shifted glyph keeps its underline (clamped to the cell bottom).
-          const uy = Math.min(pyc + cellH - 1, pyc + voff + Math.min(cellH - 1, this.fontSize - 4))
+          // washe local fix (#6, engine-independent baseline): pin the underline
+          // just under the MEASURED glyph baseline (underlineOffset, from
+          // measureCell), not the cell bottom and not a Blink-tuned fontSize-4
+          // guess. textBaseline is 'top', so the glyph top is at pyc+voff; the
+          // measured offset drops the rule right under the letterforms on every
+          // engine (WebKit's baseline sits lower than Blink's for this font, so
+          // the old constant crossed the glyphs like a strike). Tracks voff so a
+          // valign-shifted glyph keeps its underline; clamped to the cell bottom.
+          const uy = Math.min(pyc + cellH - 1, pyc + voff + this.underlineOffset)
           ctx.fillRect(x * cellW, uy, cellW, 1)
         }
         if (ai & ATTR_STRIKETHROUGH) {
-          // washe local fix (#148): a rule through the glyph's vertical MIDDLE
-          // (≈ the x-height center), tracking voff like the underline so a
-          // valign-shifted glyph keeps its strike. textBaseline is 'top', so
-          // the glyph spans py+voff..py+voff+fontSize; half the font height
-          // lands the rule across the letterforms. Clamped into the cell.
-          const sy = Math.min(
-            pyc + cellH - 1,
-            pyc + voff + Math.round(this.fontSize / 2),
-          )
+          // washe local fix (#148, engine-independent baseline): a rule through
+          // the x-height CENTER (strikeOffset = measured baseline − ½ x-height,
+          // from measureCell), tracking voff like the underline so a
+          // valign-shifted glyph keeps its strike. Replaces the fontSize/2 guess,
+          // which — with WebKit's lower baseline — drifted off the letter middle.
+          // Clamped into the cell.
+          const sy = Math.min(pyc + cellH - 1, pyc + voff + this.strikeOffset)
           ctx.fillRect(x * cellW, sy, cellW, 1)
         }
       }
