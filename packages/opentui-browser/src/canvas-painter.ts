@@ -292,8 +292,18 @@ export class CanvasPainter {
         // voff=0, byte-identical to upstream for non-opted cells.
         const vaBits = (ai >> 4) & 3
         const va = vaBits !== 0 ? vaBits : this.cellVAlignDefault
+        // washe local fix (#463): the LAST row STRETCHES to swallow the sub-cell
+        // remainder (patch 05's full-bleed rule), so its painted box is taller
+        // than cellH. A valigned glyph must centre against the box it is drawn
+        // in, or it lands rem/2 high — visibly so on a bar that owns that row.
+        // A FLUSH_BOTTOM cell declines the stretch and keeps its natural cellH,
+        // so it is excluded and illuminate's wc-bar is byte-identical.
+        const vaH =
+          y === height - 1 && (ai & ATTR_FLUSH_BOTTOM) === 0
+            ? Math.max(cellH, this.cssHeight - py)
+            : cellH
         const voff =
-          va === 1 ? Math.round((cellH - this.fontSize) / 2) : va === 2 ? cellH - this.fontSize : 0
+          va === 1 ? Math.round((vaH - this.fontSize) / 2) : va === 2 ? vaH - this.fontSize : 0
         if (ch !== 0x20) {
           const wantFont = fontFor(ai, baseFont, this.fontSize, this.fontFamily)
           if (wantFont !== lastFontStyle) {
