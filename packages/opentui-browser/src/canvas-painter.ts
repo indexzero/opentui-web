@@ -180,15 +180,7 @@ export class CanvasPainter {
   // Paint a full frame from the buffer or from a pre-snapshotted CellGrid
   // (the worker path hands us the latter).
   paint(input: OpentuiBuffer | CellGrid) {
-    const { width, height, chars, fg, bg, attrs } = 'snapshot' in input ? input.snapshot() : input
-    if (width !== this.cols || height !== this.rows) {
-      // Caller is supposed to keep these in sync, but be defensive.
-      this.resize(width, height)
-    }
-    const cellW = this.cellWidth
-    const cellH = this.cellHeight
     const ctx = this.ctx
-
     // washe local fix (canvas-host overhaul): clear the FULL backing store to
     // the page bg before any cells — UNCONDITIONALLY (before any guard) so even
     // a defensive/no-op frame leaves bg, not black. With alpha:false unpainted
@@ -202,6 +194,33 @@ export class CanvasPainter {
     ctx.fillStyle = this.clearColor
     ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
     ctx.restore()
+    this.paintCells(input, false)
+  }
+
+  // washe local fix (ambient-layer compositing): composite a CONTENT buffer over whatever is
+  // already on the canvas (the substrate frame paint() just committed). Two
+  // differences from paint():
+  //   1. NO pre-frame clear — the substrate pixels stay put; we draw over them.
+  //   2. The bg pass HONORS per-cell bg alpha: alpha 0 cells skip the fill
+  //      entirely (the substrate pixel keeps showing), fractional alpha blends
+  //      via rgba(), alpha ≥ 1 fills opaque as before.
+  // The char pass is unchanged (it already skips char===0 and honors fg alpha).
+  paintOver(input: OpentuiBuffer | CellGrid) {
+    this.paintCells(input, true)
+  }
+
+  // The two per-row passes (backgrounds, then chars) shared by paint() and
+  // paintOver(). honorBgAlpha=false is byte-identical to the historical paint()
+  // body: bg alpha is IGNORED and every cell fills opaque rgb(...).
+  private paintCells(input: OpentuiBuffer | CellGrid, honorBgAlpha: boolean) {
+    const { width, height, chars, fg, bg, attrs } = 'snapshot' in input ? input.snapshot() : input
+    if (width !== this.cols || height !== this.rows) {
+      // Caller is supposed to keep these in sync, but be defensive.
+      this.resize(width, height)
+    }
+    const cellW = this.cellWidth
+    const cellH = this.cellHeight
+    const ctx = this.ctx
 
     let lastBg = ''
     let lastFg = ''
@@ -229,10 +248,16 @@ export class CanvasPainter {
       for (let x = 0; x < width; x++) {
         const i = y * width + x
         const fi = i * 4
+        // washe local fix (ambient-layer compositing): the compositing (paintOver) path honors
+        // bg alpha — alpha 0 skips the fill (substrate pixel shows through),
+        // fractional alpha blends over it. The opaque paint() path keeps the
+        // historical behavior: alpha ignored, every cell fills rgb(...).
+        const ba = honorBgAlpha ? bg[fi + 3]! : 1
+        if (ba <= 0) continue
         const br = (bg[fi]! * 255) | 0
         const bgg = (bg[fi + 1]! * 255) | 0
         const bb = (bg[fi + 2]! * 255) | 0
-        const bgKey = `rgb(${br},${bgg},${bb})`
+        const bgKey = ba >= 1 ? `rgb(${br},${bgg},${bb})` : `rgba(${br},${bgg},${bb},${ba})`
         if (bgKey !== lastBg) {
           ctx.fillStyle = bgKey
           lastBg = bgKey
