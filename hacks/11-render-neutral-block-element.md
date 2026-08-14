@@ -2,14 +2,19 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Proposed; implementation has not started |
+| Status | Canvas2D implemented; consumer verification pending |
 | Planned branch | `washe/hack/11` |
 | Depends on | `washe/hack/10` (`paintOver` and background-alpha compositing) |
-| Origin | Washe issue #560, shared half-cell padding around picker selection bands |
-| Scope | `opentui-browser` direct cell-grid painters; Washe cleanup after the fork lands |
-| Primary owner | The `opentui-web` fork, not an individual Washe call site |
+| Origin | Consumer report: shared half-cell padding around picker selection bands |
+| Scope | `opentui-browser` direct cell-grid painters and their renderer contract |
+| Primary owner | The `opentui-web` fork, not an individual consumer call site |
 | Last reviewed | 2026-08-14 |
 | Decision | Decode U+2580–U+259F as render-neutral coverage and lower it procedurally in direct painters |
+
+Accelerated-painter parity is staged separately on the audit branch:
+
+- [`audit/issues/07-procedural-block-elements-webgl.md`](https://github.com/indexzero/opentui-web/blob/audit/audit/issues/07-procedural-block-elements-webgl.md)
+- [`audit/issues/08-procedural-block-elements-webgpu.md`](https://github.com/indexzero/opentui-web/blob/audit/audit/issues/08-procedural-block-elements-webgpu.md)
 
 > This is the first hack document. It is intentionally more explicit than a
 > normal implementation plan so it can serve as the exemplar for back-filling
@@ -18,13 +23,13 @@
 
 ## Executive decision
 
-Washe should continue to express a half-cell as the ordinary terminal idiom:
+Consumers should continue to express a half-cell as the ordinary terminal idiom:
 
 ```text
 U+2580 UPPER HALF BLOCK + foreground + background
 ```
 
-No Washe-specific half-rectangle API and no new field in `CellGrid` are needed.
+No consumer-specific half-rectangle API and no new field in `CellGrid` are needed.
 The cell already carries all of the information required to reconstruct the
 intended image. The defect is that the direct browser painters currently pass
 Block Elements through a font rasterizer, although these characters encode
@@ -41,8 +46,8 @@ Hack 11 will:
 4. Preserve ordinary font rendering for every other codepoint.
 5. Define, test, and stage equivalent GL and GPU lowering without changing the
    `CellGrid` wire format or the ANSI paths.
-6. Remove Washe's font-dependent and forced-opaque padding workaround after the
-   forked painter is verified.
+6. Allow Consumers to remove font-dependent and forced-opaque padding
+   workarounds after the forked painter is verified.
 
 This is a backend-correctness change within this fork's direct-painter contract.
 It is not a Yoga layout change, an OpenTUI core API change, or a picker-only
@@ -50,10 +55,10 @@ special case.
 
 ## Why this record exists
 
-The visible failure appeared in Washe's anthology picker at a 650 CSS-pixel
-viewport. A selected row used `▀` to share one cell row between the bottom
-padding of the item above and the top padding of the item below. The output had
-three symptoms:
+The visible failure appeared in a consumer's anthology picker at a 650
+CSS-pixel viewport. A selected row used `▀` to share one cell row between the
+bottom padding of the item above and the top padding of the item below. The
+output had three symptoms:
 
 - teeth along horizontal colour boundaries because the font glyph did not fill
   the whole cell advance;
@@ -233,8 +238,8 @@ before their ordinary glyph path.
 
 ### Required invariants
 
-1. **No application special case.** Washe emits the same codepoint and colours
-   it would emit to a terminal.
+1. **No application special case.** Consumers emit the same codepoint and
+   colours they would emit to a terminal.
 2. **No wire-format change.** `CellGrid` remains codepoint + fg + bg + attrs.
 3. **Complete range.** The decoder covers all 32 assigned codepoints from
    U+2580 through U+259F, not only `▀`.
@@ -332,9 +337,9 @@ style, but it must not be an accidental by-product of a selected font.
 
 The current Canvas2D loop paints the background across the entire cell and then
 draws a glyph over it. That is correct for ordinary opaque terminal text. It is
-also why a naive foreground `fillRect` does not repair Washe's black bar: by the
-time the foreground is considered, the background has already covered the part
-of the substrate that a transparent half was meant to reveal.
+also why a naive foreground `fillRect` does not repair the reported black bar:
+by the time the foreground is considered, the background has already covered
+the part of the substrate that a transparent half was meant to reveal.
 
 Hack 10 introduced two intentionally different modes:
 
@@ -436,8 +441,8 @@ reference behavior when CSS-space rasterization disagrees.
 
 ### Phase A: canonical decoder and Canvas2D
 
-This is the first landing target because it fixes the Washe production path and
-establishes executable semantics for later painters.
+This is the first landing target because it fixes the reported production path
+and establishes executable semantics for later painters.
 
 1. Add `block-elements.ts` with the complete mapping and coverage helpers.
 2. Add allocation-free decoder unit tests for all 32 codepoints.
@@ -455,8 +460,8 @@ establishes executable semantics for later painters.
    odd-sized cells, transparent combinations, and a checkerboard substrate.
 8. Add browser pixel tests described below.
 
-The Canvas2D landing is complete only when the Washe case works with the forced
-foreground-alpha workaround removed.
+The Canvas2D landing is complete only when the originating consumer case works
+with its forced-foreground-alpha workaround removed.
 
 ### Phase B: WebGL2
 
@@ -539,7 +544,7 @@ sprite code as prior art. Do not make Hack 11 depend on that upstream change.
 
 Browser pixel-test files and golden assets should live under a clearly named
 `packages/web-demo/e2e` or `packages/opentui-browser/e2e` tree. Do not hide
-renderer conformance in Washe's application-only suite.
+renderer conformance in a Consumer's application-only suite.
 
 ### Modified files
 
@@ -574,26 +579,23 @@ renderer conformance in Washe's application-only suite.
 - while only Canvas2D is complete, record the staged support matrix explicitly;
 - link this hack record from the relevant limitation or a new Hacks section.
 
-### Washe follow-up after the fork lands
+### Consumer adoption contract
 
-On the consuming Washe change:
+Consumers accepting this hack should:
 
-1. advance vendoring to `washe/hack/11` through the established vendor script;
-2. restore `paintPaddingRow` to `fg = above ?? bgAt(...)`, preserving sampled
-   alpha instead of copying RGB and forcing alpha to one;
-3. delete the font-measurement claim that `▀` inks only offsets 0–10 and `▄`
-   stops short of the cell bottom;
-4. keep the render-neutral statement: `▀` selects top foreground and bottom
-   background;
-5. update picker tests so a sampled transparent foreground remains transparent;
-6. keep the existing one-row layout and `fg=above, bg=below` cell contract;
-7. run the real localStorage-seeded font and width sweep, not only buffer-call
-   unit tests;
-8. remove temporary screenshot/sweep scripts only if they are superseded by a
-   checked-in conformance harness and separately confirmed as disposable.
+1. advance to the latest stacked tip containing `washe/hack/11` only after the
+   required backend phase and every intervening hack are reviewed;
+2. continue emitting ordinary Block Element codepoints with fg/bg colours;
+3. remove local font-metric and forced-alpha workarounds only after runtime
+   verification against the new painter;
+4. preserve transparent colour alpha when their layered-compositing intent is
+   to reveal the substrate;
+5. keep application-specific migration steps and regression matrices in the
+   Consumer's own plan repository rather than this renderer plan.
 
-The Washe cleanup is evidence that the fork fix is sufficient. It must not land
-first and temporarily reintroduce the black bar against Hack 10.
+Consumer cleanup is evidence that the fork fix is sufficient. It must not land
+first and temporarily reintroduce the reported compositing defect against Hack
+10.
 
 ## Verification strategy
 
@@ -677,20 +679,20 @@ Do not require byte-identical antialiasing for ordinary text. For Block Elements
 compare region classifications and edge continuity. Canvas2D, WebGL2, and WebGPU
 should agree exactly after all three phases land.
 
-### Washe acceptance sweep
+### Consumer integration verification
 
-The originating application must be checked at and around the failing width,
-not merely at a single screenshot:
+Consumers must verify the hack in the real view that exposed it, not merely
+through buffer-call unit tests. At minimum, integration evidence should cover:
 
-- widths 620–680 CSS pixels, including 646 and 650;
-- picker at rest and every selection position;
-- first, middle, and last item;
-- selection adjacent to section breaks and info panels;
-- animated and static ambient substrates;
-- each supported font, seeded in localStorage before page load;
-- DPR/zoom sweep;
-- no horizontal teeth, black bar, seam, or font-dependent split;
-- no regression to picker row count, scrolling, or hit regions.
+- the failing viewport neighborhood rather than one screenshot;
+- every supported font selected before page load;
+- representative DPR/zoom values;
+- opaque and transparent substrates;
+- first, middle, and terminal positions in the affected repeated layout;
+- no regression to layout dimensions, scrolling, or hit regions.
+
+Exact routes, widths, state setup, and application assertions belong in the
+Consumer's acceptance plan.
 
 ## Performance budget
 
@@ -736,18 +738,12 @@ must be documented and explained rather than silently accepted.
 - add transparent-substrate and shade tests;
 - verify compatibility with Hack 10.
 
-### Commit 4: Washe consumption
-
-- advance the vendored fork;
-- remove forced alpha and font-metric comments;
-- update tests and width/font/DPR evidence.
-
-### Commit 5: WebGL2
+### Commit 4: WebGL2
 
 - procedural path and parity/performance evidence;
 - update support matrix.
 
-### Commit 6: WebGPU
+### Commit 5: WebGPU
 
 - WGSL path and parity/performance evidence;
 - retire the README's direct-painter Block Element limitation.
@@ -758,7 +754,7 @@ before GPU support if the README and tests state the temporary matrix honestly.
 
 ## Alternatives considered
 
-### Keep the Washe picker workaround
+### Keep the consumer picker workaround
 
 Rejected. It encodes observed font ink into application logic, fixes one call
 site, and leaves OpenTUI supersampling and every other Block Element user exposed
@@ -804,9 +800,9 @@ shared even when backend implementations land at different times.
 
 ### Change ghostty-web first
 
-Rejected as a dependency. ghostty-web deserves an upstream fix, but Washe's
-current production path deliberately uses the direct `CanvasPainter`. The fork
-owns correctness for that painter and can land independently.
+Rejected as a dependency. ghostty-web deserves an upstream fix, but the
+reported production path deliberately uses the direct `CanvasPainter`. The
+fork owns correctness for that painter and can land independently.
 
 ### Procedurally render Box Drawing at the same time
 
@@ -822,11 +818,11 @@ machinery without expanding the acceptance surface beyond Block Elements.
 | Background pass still paints under a layered block | Black bar/full-cell band remains | Explicit `paintOver` skip plus transparent checkerboard pixel test |
 | Independent rounding creates a one-pixel crack | Original seam survives at some DPR | Absolute shared device edges and odd-size/DPR matrix |
 | Last-row stretch or `FLUSH_BOTTOM` is bypassed | wc-bar/full-bleed regressions | Feed existing effective origin/height into mask lowering; dedicated tests |
-| Shade alpha is composed incorrectly | Washed-out or opaque `░▒▓` | Premultiplied coverage equation and fg/bg alpha truth table |
+| Shade alpha is composed incorrectly | Desaturated or opaque `░▒▓` | Premultiplied coverage equation and fg/bg alpha truth table |
 | GPU shader table diverges from TypeScript | Backend-specific wrong quadrants | Generate mapping or exhaustively validate against canonical descriptors |
 | Font path still handles some range members | Future glyph-dependent artifacts | Test every codepoint and assert zero `fillText` calls |
 | New per-cell allocations hurt plasma | Frame-rate regression | Static descriptors, allocation test/profile, recorded benchmark |
-| Washe cleanup lands before fork support | Temporary black bar regression | Fork first, consuming change second |
+| Consumer cleanup lands before fork support | Temporary black bar regression | Fork first, consuming change second |
 | ghostty-web still differs | Renderer matrix remains inconsistent | Treat as explicit upstream issue, not a hidden local fallback |
 | Documentation overstates standards | Incorrect portability claim | Distinguish Unicode semantics, project contract, and alpha extension explicitly |
 
@@ -844,9 +840,9 @@ Hack 11 is complete when all of the following are true:
 - [ ] Existing glyph decorations, stretched rows, final columns, and
       `FLUSH_BOTTOM` behavior remain covered.
 - [ ] Main-thread and worker Canvas2D paths match.
-- [ ] Washe no longer forces a sampled transparent foreground to alpha one.
-- [ ] Washe's picker passes the width/font/DPR sweep without teeth, black bars,
-      seams, or asymmetric font ink.
+- [ ] A reference Consumer can preserve sampled transparent foreground alpha.
+- [ ] The reference Consumer's integration sweep passes without teeth, black
+      bars, seams, or asymmetric font ink.
 - [ ] The README accurately states Canvas2D/GL/GPU support at every landing stage.
 - [ ] WebGL2 uses procedural Block Element coverage and passes parity tests.
 - [ ] WebGPU uses procedural Block Element coverage and passes parity tests.
@@ -866,8 +862,8 @@ The implementation should be reversible without changing application buffers:
 1. revert the painter routing commits to restore font glyph rendering;
 2. retain the pure decoder and this record if they remain useful for a revised
    implementation;
-3. roll Washe back to the prior fork branch before restoring its forced-alpha
-   workaround;
+3. Consumers roll back to the prior fork branch before restoring any local
+   forced-alpha workaround;
 4. never migrate persisted state or the `CellGrid` schema as part of this hack,
    so rollback requires no data conversion.
 
@@ -973,9 +969,9 @@ should say so and link to each other.
 For this stacked series specifically, every back-filled record should identify:
 
 - the immediately preceding `washe/hack/NN` dependency;
-- the Washe issue or visual regression that required the fork change;
+- the Consumer issue or visual regression that required the fork change;
 - which CanvasPainter invariant was added;
-- the consuming Washe capability check or vendoring step;
+- the consuming capability check or vendoring step;
 - the test gap that allowed the original defect;
 - whether a later hack modifies the same paint pass, attribute bit, viewport
   calculation, or alpha rule.

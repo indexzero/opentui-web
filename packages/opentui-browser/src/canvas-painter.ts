@@ -16,6 +16,7 @@
 // ghostty-web.
 
 import type { OpentuiBuffer } from './buffer'
+import { decodeBlockElement, type BlockElementMask, type UnitRect } from './block-elements'
 import type { CellGrid } from './cell-grid'
 
 const ATTR_BOLD = 1 << 0
@@ -248,6 +249,10 @@ export class CanvasPainter {
       for (let x = 0; x < width; x++) {
         const i = y * width + x
         const fi = i * 4
+        // A layered Block Element owns both disjoint colour regions. Painting
+        // bg across the full cell here would hide the substrate beneath a
+        // transparent foreground region before the procedural pass sees it.
+        if (honorBgAlpha && decodeBlockElement(chars[i]!) !== null) continue
         // washe local fix (ambient-layer compositing): the compositing (paintOver) path honors
         // bg alpha — alpha 0 skips the fill (substrate pixel shows through),
         // fractional alpha blends over it. The opaque paint() path keeps the
@@ -306,10 +311,7 @@ export class CanvasPainter {
         const fa = fg[fi + 3]!
         const fgKey =
           fa >= 1 ? `rgb(${fr},${fgg},${fb})` : `rgba(${fr},${fgg},${fb},${fa})`
-        if (fgKey !== lastFg) {
-          ctx.fillStyle = fgKey
-          lastFg = fgKey
-        }
+        const block = decodeBlockElement(ch)
         // washe local fix (#104): per-cell vertical alignment. VALIGN rides
         // attr bits 4-5 (0=top, 1=middle, 2=bottom); 0 falls back to the
         // painter-wide default. The offset is DERIVED FROM METRICS — never a
@@ -329,7 +331,43 @@ export class CanvasPainter {
             : cellH
         const voff =
           va === 1 ? Math.round((vaH - this.fontSize) / 2) : va === 2 ? vaH - this.fontSize : 0
-        if (ch !== 0x20) {
+        if (block !== null) {
+          const ba = bg[fi + 3]!
+          const br = (bg[fi]! * 255) | 0
+          const bgg = (bg[fi + 1]! * 255) | 0
+          const bb = (bg[fi + 2]! * 255) | 0
+          const rowH = y === height - 1 ? Math.max(cellH, this.cssHeight - py) : cellH
+          const colW = x === width - 1 ? Math.max(cellW, this.cssWidth - x * cellW) : cellW
+          const flushBottom = y === height - 1 && (ai & ATTR_FLUSH_BOTTOM) !== 0
+          const scaleX = this.cssWidth > 0 ? this.canvas.width / this.cssWidth : 1
+          const scaleY = this.cssHeight > 0 ? this.canvas.height / this.cssHeight : 1
+          paintBlockElement(
+            ctx,
+            block,
+            x * cellW,
+            flushBottom ? py + rem : py,
+            colW,
+            flushBottom ? cellH : rowH,
+            fr,
+            fgg,
+            fb,
+            fa,
+            br,
+            bgg,
+            bb,
+            ba,
+            honorBgAlpha,
+            scaleX,
+            scaleY,
+          )
+          // The procedural helper owns fillStyle. Invalidate the text cache so
+          // the next ordinary glyph cannot inherit its last geometric colour.
+          lastFg = ''
+        } else if (ch !== 0x20) {
+          if (fgKey !== lastFg) {
+            ctx.fillStyle = fgKey
+            lastFg = fgKey
+          }
           const wantFont = fontFor(ai, baseFont, this.fontSize, this.fontFamily)
           if (wantFont !== lastFontStyle) {
             ctx.font = wantFont
@@ -338,6 +376,10 @@ export class CanvasPainter {
           ctx.fillText(stringForCp(ch), x * cellW, pyc + voff)
         }
         if (ai & ATTR_UNDERLINE) {
+          if (fgKey !== lastFg) {
+            ctx.fillStyle = fgKey
+            lastFg = fgKey
+          }
           // washe local fix (#6, engine-independent baseline): pin the underline
           // just under the MEASURED glyph baseline (underlineOffset, from
           // measureCell), not the cell bottom and not a Blink-tuned fontSize-4
@@ -350,6 +392,10 @@ export class CanvasPainter {
           ctx.fillRect(x * cellW, uy, cellW, 1)
         }
         if (ai & ATTR_STRIKETHROUGH) {
+          if (fgKey !== lastFg) {
+            ctx.fillStyle = fgKey
+            lastFg = fgKey
+          }
           // washe local fix (#148, engine-independent baseline): a rule through
           // the x-height CENTER (strikeOffset = measured baseline − ½ x-height,
           // from measureCell), tracking voff like the underline so a
@@ -362,6 +408,145 @@ export class CanvasPainter {
       }
     }
   }
+}
+
+function paintBlockElement(
+  ctx: CanvasRenderingContext2D,
+  mask: BlockElementMask,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  fr: number,
+  fg: number,
+  fb: number,
+  fa: number,
+  br: number,
+  bg: number,
+  bb: number,
+  ba: number,
+  layered: boolean,
+  scaleX: number,
+  scaleY: number,
+): void {
+  if (mask.kind === 'uniform') {
+    if (!layered) {
+      fillBlockRects(
+        ctx,
+        x,
+        y,
+        width,
+        height,
+        FULL_CELL,
+        fr,
+        fg,
+        fb,
+        clampAlpha(fa) * mask.coverage,
+        scaleX,
+        scaleY,
+      )
+      return
+    }
+
+    const foregroundAlpha = clampAlpha(fa)
+    const backgroundAlpha = clampAlpha(ba)
+    const backgroundCoverage = 1 - mask.coverage
+    const alpha = mask.coverage * foregroundAlpha + backgroundCoverage * backgroundAlpha
+    if (alpha <= 0) return
+    fillBlockRects(
+      ctx,
+      x,
+      y,
+      width,
+      height,
+      FULL_CELL,
+      Math.round(
+        (mask.coverage * foregroundAlpha * fr + backgroundCoverage * backgroundAlpha * br) /
+          alpha,
+      ),
+      Math.round(
+        (mask.coverage * foregroundAlpha * fg + backgroundCoverage * backgroundAlpha * bg) /
+          alpha,
+      ),
+      Math.round(
+        (mask.coverage * foregroundAlpha * fb + backgroundCoverage * backgroundAlpha * bb) /
+          alpha,
+      ),
+      alpha,
+      scaleX,
+      scaleY,
+    )
+    return
+  }
+
+  if (layered) {
+    fillBlockRects(
+      ctx,
+      x,
+      y,
+      width,
+      height,
+      mask.background,
+      br,
+      bg,
+      bb,
+      ba,
+      scaleX,
+      scaleY,
+    )
+  }
+  fillBlockRects(
+    ctx,
+    x,
+    y,
+    width,
+    height,
+    mask.foreground,
+    fr,
+    fg,
+    fb,
+    fa,
+    scaleX,
+    scaleY,
+  )
+}
+
+const FULL_CELL: readonly UnitRect[] = Object.freeze([
+  Object.freeze({ x0: 0, y0: 0, x1: 1, y1: 1 }),
+])
+
+function fillBlockRects(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  rectangles: readonly UnitRect[],
+  r: number,
+  g: number,
+  b: number,
+  sourceAlpha: number,
+  scaleX: number,
+  scaleY: number,
+): void {
+  const alpha = clampAlpha(sourceAlpha)
+  if (alpha <= 0 || rectangles.length === 0) return
+  ctx.fillStyle =
+    alpha >= 1 ? `rgb(${r},${g},${b})` : `rgba(${r},${g},${b},${alpha})`
+  for (const rectangle of rectangles) {
+    // Compute every edge from the absolute cell origin and round in device
+    // space. Shared fractional boundaries therefore resolve to the same device
+    // edge even at fractional DPR or an odd cell dimension.
+    const left = Math.round((x + rectangle.x0 * width) * scaleX) / scaleX
+    const right = Math.round((x + rectangle.x1 * width) * scaleX) / scaleX
+    const top = Math.round((y + rectangle.y0 * height) * scaleY) / scaleY
+    const bottom = Math.round((y + rectangle.y1 * height) * scaleY) / scaleY
+    if (right > left && bottom > top) ctx.fillRect(left, top, right - left, bottom - top)
+  }
+}
+
+function clampAlpha(alpha: number): number {
+  return Math.max(0, Math.min(1, alpha))
 }
 
 function fontFor(attrs: number, base: string, size: number, family: string): string {

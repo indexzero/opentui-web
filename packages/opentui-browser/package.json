@@ -6,6 +6,10 @@
   "main": "./src/index.ts",
   "module": "./src/index.ts",
   "types": "./src/index.ts",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
   "exports": {
     ".": {
       "types": "./src/index.ts",
@@ -24,6 +28,8 @@
     "yoga-layout": "3.2.1"
   },
   "devDependencies": {
-    "@webgpu/types": "^0.1.70"
+    "@webgpu/types": "^0.1.70",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.5"
   }
 }
