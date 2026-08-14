@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="76" viewBox="0 0 560 76" role="img" aria-label="WebAssembly.instantiateStreaming (+ ArrayBuffer fallback): Chrome 60 (supported), Edge 16 (supported), Firefox 58 (supported), Safari 15 (supported), iOS Safari 15 (supported)">
+<style>text{font:600 12px -apple-system,'Segoe UI',sans-serif;fill:#fff}.hdr{font-weight:700}.sub{font-weight:400;font-size:10px;opacity:.85}</style>
+<rect x="0" y="0" width="110" height="28" fill="#57606a"/>
+<text class="hdr" x="55" y="19" text-anchor="middle">Chrome</text>
+<rect x="0" y="30" width="110" height="44" fill="#2a9d3f"/>
+<text x="55" y="50" text-anchor="middle">✓ 60</text>
+<rect x="112" y="0" width="110" height="28" fill="#57606a"/>
+<text class="hdr" x="167" y="19" text-anchor="middle">Edge</text>
+<rect x="112" y="30" width="110" height="44" fill="#2a9d3f"/>
+<text x="167" y="50" text-anchor="middle">✓ 16</text>
+<rect x="224" y="0" width="110" height="28" fill="#57606a"/>
+<text class="hdr" x="279" y="19" text-anchor="middle">Firefox</text>
+<rect x="224" y="30" width="110" height="44" fill="#2a9d3f"/>
+<text x="279" y="50" text-anchor="middle">✓ 58</text>
+<rect x="336" y="0" width="110" height="28" fill="#57606a"/>
+<text class="hdr" x="391" y="19" text-anchor="middle">Safari</text>
+<rect x="336" y="30" width="110" height="44" fill="#2a9d3f"/>
+<text x="391" y="50" text-anchor="middle">✓ 15</text>
+<rect x="448" y="0" width="110" height="28" fill="#57606a"/>
+<text class="hdr" x="503" y="19" text-anchor="middle">iOS Safari</text>
+<rect x="448" y="30" width="110" height="44" fill="#2a9d3f"/>
+<text x="503" y="50" text-anchor="middle">✓ 15</text>
+</svg>

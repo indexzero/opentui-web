@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="660" height="112" viewBox="0 0 660 112" role="img" aria-label="legend: check supported, exclamation caveat, clock recent, cross unsupported">
+<style>text{font:400 13px -apple-system,'Segoe UI',sans-serif;fill:#8b949e}</style>
+<rect x="4" y="4" width="34" height="20" fill="#2a9d3f"/>
+<text x="48" y="19">✓ supported (first full-support version from MDN BCD)</text>
+<rect x="4" y="30" width="34" height="20" fill="#b07f0e"/>
+<text x="48" y="45">! supported with caveat / interop hazard — read the note</text>
+<rect x="4" y="56" width="34" height="20" fill="#3572b0"/>
+<text x="48" y="71">◷ recent — check fleet coverage before relying on it</text>
+<rect x="4" y="82" width="34" height="20" fill="#c4432b"/>
+<text x="48" y="97">✗ not supported</text>
+</svg>

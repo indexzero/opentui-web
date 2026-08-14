@@ -1,0 +1,755 @@
+{
+  "bcdVersion": "8.0.8",
+  "features": [
+    {
+      "id": "canvas-2d-text",
+      "name": "Canvas 2D text (fillText / fillRect / setTransform)",
+      "tier": "A",
+      "painters": [
+        "2d",
+        "gl",
+        "gpu"
+      ],
+      "disposition": null,
+      "caniuse": "https://caniuse.com/canvas-text",
+      "baseline": "Widely available",
+      "mdn": "https://developer.mozilla.org/docs/Web/API/CanvasRenderingContext2D/fillText",
+      "interop": null,
+      "fleet": null,
+      "usage": [
+        "opentui-browser/src/canvas-painter.ts",
+        "canvas-gl-painter.ts (atlas)",
+        "canvas-gpu-painter.ts (atlas)"
+      ],
+      "cells": [
+        {
+          "b": "Chrome",
+          "status": "y",
+          "since": "2"
+        },
+        {
+          "b": "Edge",
+          "status": "y",
+          "since": "12"
+        },
+        {
+          "b": "Firefox",
+          "status": "y",
+          "since": "3.5"
+        },
+        {
+          "b": "Safari",
+          "status": "y",
+          "since": "4"
+        },
+        {
+          "b": "iOS Safari",
+          "status": "y",
+          "since": "3.2"
+        }
+      ]
+    },
+    {
+      "id": "canvas-textbaseline-top",
+      "name": "textBaseline: 'top' (anchor-relative glyph placement)",
+      "tier": "A",
+      "painters": [
+        "2d",
+        "gl",
+        "gpu"
+      ],
+      "disposition": {
+        "kind": "fix-in-flight",
+        "detail": "washe/hack/08 (2D rules) + issues/05 (atlas parity) + issues/01 (invariant tests) + issues/04 (lint guard)",
+        "findings": [
+          "F2",
+          "F3"
+        ]
+      },
+      "caniuse": "https://caniuse.com/mdn-api_canvasrenderingcontext2d_textbaseline",
+      "baseline": "Widely available",
+      "mdn": "https://developer.mozilla.org/docs/Web/API/CanvasRenderingContext2D/textBaseline",
+      "interop": "Universally 'supported', divergently IMPLEMENTED: the anchor→alphabetic-baseline distance derives from font ascent metrics the spec does not pin to specific font tables, so identical (font, size, y) places glyphs at different heights per engine. Any absolute offset from the 'top' anchor (underlines, strikes, vertical centering) is engine-dependent. WPT interop#159 / interop#427 (declined 2023 & 2024), whatwg/html#6731.",
+      "fleet": "Affects 100% of WebKit traffic — on iOS that is every browser (see the engine-mandate note).",
+      "usage": [
+        "all three painters set it for measurement and atlas/main-canvas drawing"
+      ],
+      "cells": [
+        {
+          "b": "Chrome",
+          "status": "a",
+          "since": "2"
+        },
+        {
+          "b": "Edge",
+          "status": "a",
+          "since": "12"
+        },
+        {
+          "b": "Firefox",
+          "status": "a",
+          "since": "3.5"
+        },
+        {
+          "b": "Safari",
+          "status": "a",
+          "since": "4"
+        },
+        {
+          "b": "iOS Safari",
+          "status": "a",
+          "since": "3.2"
+        }
+      ]
+    },
+    {
+      "id": "textmetrics-actual",
+      "name": "TextMetrics actualBoundingBox{Ascent,Descent,Left,Right}",
+      "tier": "A",
+      "painters": [
+        "2d",
+        "gl",
+        "gpu"
+      ],
+      "disposition": {
+        "kind": "mitigation-seam",
+        "detail": "this API IS the remediation for F2/F3 — self-calibration source",
+        "findings": []
+      },
+      "caniuse": "https://caniuse.com/mdn-api_textmetrics_actualboundingboxascent",
+      "baseline": "Widely available",
+      "mdn": "https://developer.mozilla.org/docs/Web/API/TextMetrics/actualBoundingBoxAscent",
+      "interop": "Values are per-engine rasterizer truth — that is their value: they describe what THIS engine will draw, with ±1px rounding variance across engines (Chrome rounds nearest, Firefox rounds up; Mozilla bug 1801198). Use for self-calibration, never for cross-engine pixel identity.",
+      "fleet": null,
+      "usage": [
+        "measureCell() self-calibration in all painters (remediation seam for F1/F2)"
+      ],
+      "cells": [
+        {
+          "b": "Chrome",
+          "status": "y",
+          "since": "77"
+        },
+        {
+          "b": "Edge",
+          "status": "y",
+          "since": "79"
+        },
+        {
+          "b": "Firefox",
+          "status": "y",
+          "since": "74"
+        },
+        {
+          "b": "Safari",
+          "status": "y",
+          "since": "11.1"
+        },
+        {
+          "b": "iOS Safari",
+          "status": "y",
+          "since": "11.3"
+        }
+      ]
+    },
+    {
+      "id": "textmetrics-font",
+      "name": "TextMetrics fontBoundingBox{Ascent,Descent} — deliberately unused",
+      "tier": "A",
+      "painters": [
+        "2d",
+        "gl",
+        "gpu"
+      ],
+      "disposition": {
+        "kind": "policy-guard",
+        "detail": "do-not-adopt policy row; the listing is the mitigation",
+        "findings": []
+      },
+      "caniuse": "https://caniuse.com/mdn-api_textmetrics_fontboundingboxascent",
+      "baseline": "Widely available (since 2023-08)",
+      "mdn": "https://developer.mozilla.org/docs/Web/API/TextMetrics/fontBoundingBoxAscent",
+      "interop": "The poster child of supported-but-not-interoperable: three engines return three different value sets for the same font (WPT interop#427: \"you have to pick one browser to display it right\"). Policy: do not adopt for layout math; prefer actualBoundingBox self-calibration.",
+      "fleet": null,
+      "usage": [
+        "none — listed because it is the tempting wrong tool for baseline math"
+      ],
+      "cells": [
+        {
+          "b": "Chrome",
+          "status": "a",
+          "since": "87"
+        },
+        {
+          "b": "Edge",
+          "status": "a",
+          "since": "87"
+        },
+        {
+          "b": "Firefox",
+          "status": "a",
+          "since": "116"
+        },
+        {
+          "b": "Safari",
+          "status": "a",
+          "since": "11.1"
+        },
+        {
+          "b": "iOS Safari",
+          "status": "a",
+          "since": "11.3"
+        }
+      ]
+    },
+    {
+      "id": "canvas-measuretext-width",
+      "name": "measureText().width (cell-grid sizing)",
+      "tier": "A",
+      "painters": [
+        "2d",
+        "gl",
+        "gpu"
+      ],
+      "disposition": {
+        "kind": "accepted-risk",
+        "detail": "floored fit contains it; cross-engine layout identity must not be asserted (F4)",
+        "findings": [
+          "F4"
+        ],
+        "signedOff": "2026-07-29 indexzero — \"Risk 1 - accepted\" (cure options judged worse than the drift)"
+      },
+      "caniuse": "https://caniuse.com/canvas-text",
+      "baseline": "Widely available",
+      "mdn": "https://developer.mozilla.org/docs/Web/API/CanvasRenderingContext2D/measureText",
+      "interop": "Advance width of 'M' differs sub-pixel per engine/OS rasterizer, so rounded cell width — and column count at a given viewport — can differ by one across engines. fit() floors cols/rows, which contains but does not eliminate the divergence.",
+      "fleet": null,
+      "usage": [
+        "canvas-painter.ts measureCell()",
+        "canvas-gl-painter.ts:193",
+        "canvas-gpu-painter.ts:219"
+      ],
+      "cells": [
+        {
+          "b": "Chrome",
+          "status": "a",
+          "since": "2"
+        },
+        {
+          "b": "Edge",
+          "status": "a",
+          "since": "12"
+        },
+        {
+          "b": "Firefox",
+          "status": "a",
+          "since": "3.5"
+        },
+        {
+          "b": "Safari",
+          "status": "a",
+          "since": "4"
+        },
+        {
+          "b": "iOS Safari",
+          "status": "a",
+          "since": "3.2"
+        }
+      ]
+    },
+    {
+      "id": "webgl2",
+      "name": "WebGL2 ('webgl2' context, glyph-atlas instancing)",
+      "tier": "A",
+      "painters": [
+        "gl"
+      ],
+      "disposition": {
+        "kind": "issue-filed",
+        "detail": "charlie.dev#447 (full GL parity gap memorialized) + issues/01 (WebKit smoke covers premultiplied-alpha/texImage2D verification)",
+        "findings": []
+      },
+      "caniuse": "https://caniuse.com/webgl2",
+      "baseline": "Widely available",
+      "mdn": "https://developer.mozilla.org/docs/Web/API/WebGL2RenderingContext",
+      "interop": "Safari shipped WebGL2 only in 15 (2021) — older WebKit returns null from getContext. Context requests { alpha:false, antialias:false, premultipliedAlpha:false }: premultiplied-alpha handling and texImage2D-from-canvas color management have a history of WebKit-specific differences; verify visually on WebKit, do not assume.",
+      "fleet": "Pre-iOS-15 devices are the at-risk tail (2021 floor; small, shrinking). Check StatCounter iOS-version split at each audit before treating as zero.",
+      "usage": [
+        "canvas-gl-painter.ts:122 (context)",
+        ":225 (texImage2D from atlas canvas)"
+      ],
+      "cells": [
+        {
+          "b": "Chrome",
+          "status": "y",
+          "since": "56"
+        },
+        {
+          "b": "Edge",
+          "status": "y",
+          "since": "79"
+        },
+        {
+          "b": "Firefox",
+          "status": "y",
+          "since": "51"
+        },
+        {
+          "b": "Safari",
+          "status": "a",
+          "since": "15"
+        },
+        {
+          "b": "iOS Safari",
+          "status": "a",
+          "since": "15"
+        }
+      ]
+    },
+    {
+      "id": "webgpu",
+      "name": "WebGPU (navigator.gpu, GPUCanvasContext)",
+      "tier": "A",
+      "painters": [
+        "gpu"
+      ],
+      "disposition": {
+        "kind": "issue-filed",
+        "detail": "charlie.dev#448 (GPU-specific parity deltas) + issues/03 (supportsPainter capability export)",
+        "findings": [
+          "F5"
+        ]
+      },
+      "caniuse": "https://caniuse.com/webgpu",
+      "baseline": "Newly available",
+      "mdn": "https://developer.mozilla.org/docs/Web/API/GPU",
+      "interop": "Chromium-stable since 113 (2023); recent everywhere else — Safari 26 (2025), Firefox 141+ (initially Windows-only). canvas-gpu-painter.ts:123 THROWS when navigator.gpu is absent — the embedder owns the gpu → gl → 2d fallback chain (finding F4).",
+      "fleet": "The sub-26 iOS tail is the at-risk fleet for any embedder defaulting to the GPU painter; measure with caniuse usage-relative mode before promoting this painter. Chromium-only fleets unaffected.",
+      "usage": [
+        "canvas-gpu-painter.ts:123 (hard throw when unavailable)"
+      ],
+      "cells": [
+        {
+          "b": "Chrome",
+          "status": "y",
+          "since": "144"
+        },
+        {
+          "b": "Edge",
+          "status": "y",
+          "since": "144"
+        },
+        {
+          "b": "Firefox",
+          "status": "r",
+          "since": "141"
+        },
+        {
+          "b": "Safari",
+          "status": "r",
+          "since": "26"
+        },
+        {
+          "b": "iOS Safari",
+          "status": "r",
+          "since": "26"
+        }
+      ]
+    },
+    {
+      "id": "wasm-streaming",
+      "name": "WebAssembly.instantiateStreaming (+ ArrayBuffer fallback)",
+      "tier": "A",
+      "painters": [
+        "lib"
+      ],
+      "disposition": null,
+      "caniuse": "https://caniuse.com/wasm",
+      "baseline": "Widely available",
+      "mdn": "https://developer.mozilla.org/docs/WebAssembly/Reference/JavaScript_interface/instantiateStreaming_static",
+      "interop": "instantiateStreaming requires the server to send application/wasm — historically the most common WASM breakage class. wasm.ts holds the correct pattern: streaming first, non-streaming instantiate fallback. Keep the fallback; hosting configs regress.",
+      "fleet": null,
+      "usage": [
+        "opentui-browser/src/wasm.ts:82-87"
+      ],
+      "cells": [
+        {
+          "b": "Chrome",
+          "status": "y",
+          "since": "60"
+        },
+        {
+          "b": "Edge",
+          "status": "y",
+          "since": "16"
+        },
+        {
+          "b": "Firefox",
+          "status": "y",
+          "since": "58"
+        },
+        {
+          "b": "Safari",
+          "status": "y",
+          "since": "15"
+        },
+        {
+          "b": "iOS Safari",
+          "status": "y",
+          "since": "15"
+        }
+      ]
+    },
+    {
+      "id": "text-encoding",
+      "name": "TextEncoder / TextDecoder",
+      "tier": "A",
+      "painters": [
+        "lib"
+      ],
+      "disposition": null,
+      "caniuse": "https://caniuse.com/textencoder",
+      "baseline": "Widely available",
+      "mdn": "https://developer.mozilla.org/docs/Web/API/TextEncoder",
+      "interop": null,
+      "fleet": null,
+      "usage": [
+        "ansi.ts:10",
+        "buffer.ts:12",
+        "edit-buffer.ts:8"
+      ],
+      "cells": [
+        {
+          "b": "Chrome",
+          "status": "y",
+          "since": "38"
+        },
+        {
+          "b": "Edge",
+          "status": "y",
+          "since": "79"
+        },
+        {
+          "b": "Firefox",
+          "status": "y",
+          "since": "18"
+        },
+        {
+          "b": "Safari",
+          "status": "y",
+          "since": "10.1"
+        },
+        {
+          "b": "iOS Safari",
+          "status": "y",
+          "since": "10.3"
+        }
+      ]
+    },
+    {
+      "id": "device-pixel-ratio",
+      "name": "window.devicePixelRatio (backing-store scaling)",
+      "tier": "A",
+      "painters": [
+        "2d",
+        "gl",
+        "gpu"
+      ],
+      "disposition": {
+        "kind": "issue-drafted",
+        "detail": "issues/06 (GL/GPU DPR re-measure); 2D painter already mitigates via measured setViewport",
+        "findings": [
+          "F6"
+        ]
+      },
+      "caniuse": "https://caniuse.com/mdn-api_window_devicepixelratio",
+      "baseline": "Widely available",
+      "mdn": "https://developer.mozilla.org/docs/Web/API/Window/devicePixelRatio",
+      "interop": "Universal API; the hazard is fractional DPR (browser zoom, Windows scale factors) interacting with per-engine rasterization. The 2D painter derives its transform from measured device pixels (setTransform(deviceW/cssW, …)) — the right shape; GL/GPU painters snapshot devicePixelRatio at init (finding F5).",
+      "fleet": null,
+      "usage": [
+        "canvas-gl-painter.ts:121",
+        "canvas-gpu-painter.ts:121",
+        "canvas-painter.ts setViewport()"
+      ],
+      "cells": [
+        {
+          "b": "Chrome",
+          "status": "a",
+          "since": "1"
+        },
+        {
+          "b": "Edge",
+          "status": "a",
+          "since": "12"
+        },
+        {
+          "b": "Firefox",
+          "status": "a",
+          "since": "18"
+        },
+        {
+          "b": "Safari",
+          "status": "a",
+          "since": "3"
+        },
+        {
+          "b": "iOS Safari",
+          "status": "a",
+          "since": "2"
+        }
+      ]
+    },
+    {
+      "id": "canvas-colorspace",
+      "name": "Canvas colorSpace / display-P3 — unused, unmanaged",
+      "tier": "A",
+      "painters": [
+        "2d",
+        "gl",
+        "gpu"
+      ],
+      "disposition": {
+        "kind": "issue-filed",
+        "detail": "charlie.dev#446 — measure sRGB-on-P3 divergence via painter swatch check, then decide display-p3 adoption (owner ruling 2026-07-29: not accepted as-is; tracked instead)",
+        "findings": []
+      },
+      "caniuse": "https://caniuse.com/mdn-api_htmlcanvaselement_getcontext_2d_context_colorspace",
+      "baseline": "Widely available (2023+)",
+      "mdn": null,
+      "interop": "The painters never pass colorSpace, so every canvas is sRGB — and on wide-gamut displays (all current iPhones, most Macs) the ENGINE decides how sRGB canvas content maps to the P3 panel. Color-critical output (brand colors, subtle fades) can render measurably differently per engine/OS. Recorded as an audited absence: revisit whenever color fidelity becomes a requirement.",
+      "fleet": "Wide-gamut panels are the majority of Apple-device traffic.",
+      "usage": [
+        "none — absence verified by identifier-level sweep (scan.mjs absence check)"
+      ],
+      "cells": [
+        {
+          "b": "Chrome",
+          "status": "a",
+          "since": "92"
+        },
+        {
+          "b": "Edge",
+          "status": "a",
+          "since": "92"
+        },
+        {
+          "b": "Firefox",
+          "status": "n",
+          "since": "—"
+        },
+        {
+          "b": "Safari",
+          "status": "a",
+          "since": "15.2"
+        },
+        {
+          "b": "iOS Safari",
+          "status": "a",
+          "since": "15.2"
+        }
+      ]
+    },
+    {
+      "id": "module-workers",
+      "name": "Workers with { type: 'module' } (web-demo)",
+      "tier": "B",
+      "painters": [
+        "demo"
+      ],
+      "disposition": {
+        "kind": "open-risk",
+        "detail": "demo tier; fallback required only if promoted to Tier A",
+        "findings": []
+      },
+      "caniuse": "https://caniuse.com/mdn-api_worker_worker_ecmascript_modules",
+      "baseline": "Widely available (since 2023)",
+      "mdn": null,
+      "interop": "Firefox only since 114 (mid-2023) — old-ESR/derivative fleets still trip this. Demo-tier acceptable; needs a fallback if promoted to Tier A.",
+      "fleet": "ESR stragglers only; negligible and shrinking.",
+      "usage": [
+        "web-demo/src/routes/*.tsx (8 demo workers)"
+      ],
+      "cells": [
+        {
+          "b": "Chrome",
+          "status": "y",
+          "since": "80"
+        },
+        {
+          "b": "Edge",
+          "status": "y",
+          "since": "80"
+        },
+        {
+          "b": "Firefox",
+          "status": "a",
+          "since": "114"
+        },
+        {
+          "b": "Safari",
+          "status": "y",
+          "since": "15"
+        },
+        {
+          "b": "iOS Safari",
+          "status": "y",
+          "since": "15"
+        }
+      ]
+    },
+    {
+      "id": "resize-observer",
+      "name": "ResizeObserver (web-demo)",
+      "tier": "B",
+      "painters": [
+        "demo"
+      ],
+      "disposition": null,
+      "caniuse": "https://caniuse.com/resizeobserver",
+      "baseline": "Widely available",
+      "mdn": "https://developer.mozilla.org/docs/Web/API/ResizeObserver",
+      "interop": null,
+      "fleet": null,
+      "usage": [
+        "web-demo/src/demo-lib/variants.tsx"
+      ],
+      "cells": [
+        {
+          "b": "Chrome",
+          "status": "y",
+          "since": "64"
+        },
+        {
+          "b": "Edge",
+          "status": "y",
+          "since": "79"
+        },
+        {
+          "b": "Firefox",
+          "status": "y",
+          "since": "69"
+        },
+        {
+          "b": "Safari",
+          "status": "y",
+          "since": "13.1"
+        },
+        {
+          "b": "iOS Safari",
+          "status": "y",
+          "since": "13.4"
+        }
+      ]
+    },
+    {
+      "id": "dvh-units",
+      "name": "CSS dynamic viewport units (dvh/dvw) (web-demo)",
+      "tier": "B",
+      "painters": [
+        "demo"
+      ],
+      "disposition": {
+        "kind": "open-risk",
+        "detail": "device-class behavior, not a support gap",
+        "findings": []
+      },
+      "caniuse": "https://caniuse.com/viewport-unit-variants",
+      "baseline": "Widely available",
+      "mdn": null,
+      "interop": "Supported in all current engines; the behavioral variance (iOS URL-bar collapse timing changing when dv* values settle) is a device-class difference, not a support gap.",
+      "fleet": null,
+      "usage": [
+        "web-demo styles"
+      ],
+      "cells": [
+        {
+          "b": "Chrome",
+          "status": "y",
+          "since": "108"
+        },
+        {
+          "b": "Edge",
+          "status": "y",
+          "since": "108"
+        },
+        {
+          "b": "Firefox",
+          "status": "y",
+          "since": "101"
+        },
+        {
+          "b": "Safari",
+          "status": "y",
+          "since": "15.4"
+        },
+        {
+          "b": "iOS Safari",
+          "status": "a",
+          "since": "15.4"
+        }
+      ]
+    },
+    {
+      "id": "tree-sitter-wasm",
+      "name": "tree-sitter WASM grammars over fetch + classic Worker (core lib)",
+      "tier": "C",
+      "painters": [
+        "lib"
+      ],
+      "disposition": null,
+      "caniuse": "https://caniuse.com/wasm",
+      "baseline": "Widely available",
+      "mdn": "https://developer.mozilla.org/docs/WebAssembly/Reference/JavaScript_interface",
+      "interop": "Classic Worker (no module type) — broad support; grammar downloads are cross-origin fetches with the usual CORS/MIME constraints.",
+      "fleet": null,
+      "usage": [
+        "core/src/lib/tree-sitter/client.ts:107"
+      ],
+      "cells": [
+        {
+          "b": "Chrome",
+          "status": "y",
+          "since": "57"
+        },
+        {
+          "b": "Edge",
+          "status": "y",
+          "since": "16"
+        },
+        {
+          "b": "Firefox",
+          "status": "y",
+          "since": "52"
+        },
+        {
+          "b": "Safari",
+          "status": "y",
+          "since": "11"
+        },
+        {
+          "b": "iOS Safari",
+          "status": "y",
+          "since": "11"
+        }
+      ]
+    }
+  ],
+  "absences": [
+    {
+      "id": "offscreencanvas",
+      "name": "OffscreenCanvas",
+      "note": "Not used. Worker rendering snapshots the cell grid to the main thread instead. Adoption would move the floor to Safari 16.4 / Firefox 105 — a deliberate trade to re-evaluate each audit, not an accident."
+    },
+    {
+      "id": "fontface-ready",
+      "name": "FontFace API / document.fonts.ready",
+      "note": "Not used inside the library. measureCell() measures whatever font is active at construction; engines DIFFER in fallback-font metrics, so un-gated construction is differently wrong per engine (finding F6). The primary embedder gates fonts host-side before constructing the painter."
+    },
+    {
+      "id": "shared-array-buffer",
+      "name": "SharedArrayBuffer / Atomics",
+      "note": "Type-level references only (bun-ffi structs d.ts); no runtime use. Any future adoption drags in COOP/COEP cross-origin-isolation requirements."
+    }
+  ]
+}

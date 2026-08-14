@@ -1,0 +1,1815 @@
+{
+  "usage": {
+    "webassembly": [
+      {
+        "file": "packages/opentui/packages/core/dev/keypress-debug-renderer.ts",
+        "line": 10,
+        "text": "wasm: \"https://github.com/tree-sitter/tree-sitter-json/releases/download/v0.24.8/tree-sitter-json.wasm\","
+      },
+      {
+        "file": "packages/opentui/packages/core/src/examples/markdown-demo.ts",
+        "line": 345,
+        "text": "\"https://github.com/tree-sitter/tree-sitter-json/releases/download/v0.24.8/tree-sitter-json.wasm\""
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/bunfs.test.ts",
+        "line": 6,
+        "text": "expect(isBunfsPath(\"/$bunfs/root/file.wasm\")).toBe(true)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/bunfs.test.ts",
+        "line": 10,
+        "text": "expect(isBunfsPath(\"B:\\\\~BUN\\\\root\\\\file.wasm\")).toBe(true)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/bunfs.test.ts",
+        "line": 11,
+        "text": "expect(isBunfsPath(\"B:/~BUN/root/file.wasm\")).toBe(true)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/bunfs.test.ts",
+        "line": 16,
+        "text": "expect(isBunfsPath(\"C:/Users/file.wasm\")).toBe(false)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/assets/update.ts",
+        "line": 234,
+        "text": "const languagePath = await downloadLanguage(parser.filetype, parser.wasm, opts.assetsDir, opts.outputPath)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/cache.test.ts",
+        "line": 74,
+        "text": "wasm: `${baseUrl}/javascript/tree-sitter-javascript.wasm`,"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/cache.test.ts",
+        "line": 83,
+        "text": "expect(cachedFiles).toContain(\"tree-sitter-javascript.wasm\")"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/cache.test.ts",
+        "line": 98,
+        "text": "wasm: `${baseUrl}/javascript/tree-sitter-javascript.wasm`,"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/cache.test.ts",
+        "line": 120,
+        "text": "wasm: `${baseUrl}/javascript/tree-sitter-javascript.wasm`,"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/cache.test.ts",
+        "line": 163,
+        "text": "wasm: `${baseUrl}/javascript/tree-sitter-javascript.wasm`,"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/cache.test.ts",
+        "line": 170,
+        "text": "wasm: `${baseUrl}/typescript/tree-sitter-typescript.wasm`,"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/cache.test.ts",
+        "line": 182,
+        "text": "expect(cachedFiles).toContain(\"tree-sitter-javascript.wasm\")"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/cache.test.ts",
+        "line": 183,
+        "text": "expect(cachedFiles).toContain(\"tree-sitter-typescript.wasm\")"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/cache.test.ts",
+        "line": 204,
+        "text": "wasm: `${baseUrl}/javascript/tree-sitter-javascript.wasm`,"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/cache.test.ts",
+        "line": 220,
+        "text": "expect(cachedFiles).toContain(\"tree-sitter-javascript.wasm\")"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/cache.test.ts",
+        "line": 253,
+        "text": "wasm: `${baseUrl}/javascript/tree-sitter-javascript.wasm`,"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/cache.test.ts",
+        "line": 261,
+        "text": "expect(initialFiles).toContain(\"tree-sitter-javascript.wasm\")"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/cache.test.ts",
+        "line": 271,
+        "text": "wasm: `${baseUrl}/typescript/tree-sitter-typescript.wasm`,"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/cache.test.ts",
+        "line": 279,
+        "text": "expect(newFiles).toContain(\"tree-sitter-typescript.wasm\")"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/client.test.ts",
+        "line": 389,
+        "text": "const testWasmPath = fileURLToPath(new URL(\"./assets/javascript/tree-sitter-javascript.wasm\", import.meta.url))"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/client.test.ts",
+        "line": 461,
+        "text": "const languageLoadLogs = workerLogs.filter((log) => log.includes(\"tree-sitter-javascript.wasm\"))"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/client.test.ts",
+        "line": 497,
+        "text": "const languageLoadLogs = workerLogs.filter((log) => log.includes(\"tree-sitter-javascript.wasm\"))"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/client.ts",
+        "line": 198,
+        "text": "wasm: this.resolvePath(filetypeParser.wasm),"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/default-parsers.ts",
+        "line": 9,
+        "text": "const javascript_language = fileURLToPath(new URL(\"./assets/javascript/tree-sitter-javascript.wasm\", import.meta.url))"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/default-parsers.ts",
+        "line": 11,
+        "text": "const typescript_language = fileURLToPath(new URL(\"./assets/typescript/tree-sitter-typescript.wasm\", import.meta.url))"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/default-parsers.ts",
+        "line": 13,
+        "text": "const markdown_language = fileURLToPath(new URL(\"./assets/markdown/tree-sitter-markdown.wasm\", import.meta.url))"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/default-parsers.ts",
+        "line": 16,
+        "text": "const markdown_inline_language = fileURLToPath(new URL(\"./assets/markdown_inline/tree-sitter-markdown_inline.wasm\", impo"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/default-parsers.ts",
+        "line": 18,
+        "text": "const zig_language = fileURLToPath(new URL(\"./assets/zig/tree-sitter-zig.wasm\", import.meta.url))"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/parser.worker.ts",
+        "line": 92,
+        "text": "let treeWasm = fileURLToPath(new URL(import.meta.resolve(\"web-tree-sitter/tree-sitter.wasm\")))"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/parser.worker.ts",
+        "line": 251,
+        "text": "const language = await this.loadLanguage(filetypeParserOptions.wasm)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/parsers-config.ts",
+        "line": 11,
+        "text": "wasm: \"https://github.com/tree-sitter/tree-sitter-javascript/releases/download/v0.25.0/tree-sitter-javascript.wasm\","
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/parsers-config.ts",
+        "line": 21,
+        "text": "wasm: \"https://github.com/tree-sitter/tree-sitter-typescript/releases/download/v0.23.2/tree-sitter-typescript.wasm\","
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/parsers-config.ts",
+        "line": 31,
+        "text": "wasm: \"https://github.com/tree-sitter-grammars/tree-sitter-markdown/releases/download/v0.5.1/tree-sitter-markdown.wasm\","
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/parsers-config.ts",
+        "line": 62,
+        "text": "wasm: \"https://github.com/tree-sitter-grammars/tree-sitter-markdown/releases/download/v0.5.1/tree-sitter-markdown_inline"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/parsers-config.ts",
+        "line": 73,
+        "text": "wasm: \"https://github.com/tree-sitter-grammars/tree-sitter-zig/releases/download/v1.1.2/tree-sitter-zig.wasm\","
+      },
+      {
+        "file": "packages/opentui-browser/src/wasm.ts",
+        "line": 82,
+        "text": "const url = new URL('./opentui.wasm', import.meta.url)"
+      },
+      {
+        "file": "packages/opentui-browser/src/wasm.ts",
+        "line": 83,
+        "text": "cached = WebAssembly.instantiateStreaming(fetch(url), {})"
+      },
+      {
+        "file": "packages/opentui-browser/src/wasm.ts",
+        "line": 87,
+        "text": "const r = await WebAssembly.instantiate(bytes, {})"
+      }
+    ],
+    "webgpu": [
+      {
+        "file": "packages/opentui/packages/core/src/3d/WGPURenderer.ts",
+        "line": 36,
+        "text": "private device: GPUDevice | null = null"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/3d/canvas.ts",
+        "line": 2,
+        "text": "import { GPUCanvasContextMock } from \"bun-webgpu\""
+      },
+      {
+        "file": "packages/opentui/packages/core/src/3d/canvas.ts",
+        "line": 20,
+        "text": "private device: GPUDevice"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/3d/canvas.ts",
+        "line": 24,
+        "text": "private gpuCanvasContext: GPUCanvasContextMock"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/3d/canvas.ts",
+        "line": 42,
+        "text": "device: GPUDevice,"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/3d/canvas.ts",
+        "line": 52,
+        "text": "this.gpuCanvasContext = new GPUCanvasContextMock(this as unknown as HTMLCanvasElement, width, height)"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-gpu-painter.ts",
+        "line": 95,
+        "text": "private device!: GPUDevice"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-gpu-painter.ts",
+        "line": 96,
+        "text": "private context!: GPUCanvasContext"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-gpu-painter.ts",
+        "line": 123,
+        "text": "throw new Error('CanvasGPUPainter: navigator.gpu unavailable (no WebGPU)')"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-gpu-painter.ts",
+        "line": 131,
+        "text": "const gpu = navigator.gpu"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-gpu-painter.ts",
+        "line": 132,
+        "text": "const adapter = await gpu.requestAdapter()"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-gpu-painter.ts",
+        "line": 145,
+        "text": "this.context = this.canvas.getContext('webgpu') as unknown as GPUCanvasContext"
+      }
+    ],
+    "performance-now": [
+      {
+        "file": "packages/opentui/packages/core/src/3d/WGPURenderer.ts",
+        "line": 227,
+        "text": "const totalStart = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/3d/WGPURenderer.ts",
+        "line": 228,
+        "text": "const renderStart = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/3d/WGPURenderer.ts",
+        "line": 230,
+        "text": "this.renderTimeMs = performance.now() - renderStart"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/3d/WGPURenderer.ts",
+        "line": 232,
+        "text": "const readbackStart = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/3d/WGPURenderer.ts",
+        "line": 234,
+        "text": "this.readbackTimeMs = performance.now() - readbackStart"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/3d/WGPURenderer.ts",
+        "line": 236,
+        "text": "this.totalDrawTimeMs = performance.now() - totalStart"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/3d/canvas.ts",
+        "line": 297,
+        "text": "const mapAsyncStart = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/3d/canvas.ts",
+        "line": 347,
+        "text": "this.mapAsyncTimeMs = performance.now() - mapAsyncStart"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/3d/canvas.ts",
+        "line": 349,
+        "text": "const ssStart = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/3d/canvas.ts",
+        "line": 351,
+        "text": "this.superSampleDrawTimeMs = performance.now() - ssStart"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/3d/canvas.ts",
+        "line": 407,
+        "text": "const mapStart = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/3d/canvas.ts",
+        "line": 409,
+        "text": "this.mapAsyncTimeMs = performance.now() - mapStart"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/3d/canvas.ts",
+        "line": 421,
+        "text": "const ssStart = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/3d/canvas.ts",
+        "line": 423,
+        "text": "this.superSampleDrawTimeMs = performance.now() - ssStart"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/benchmark/attenuation-benchmark.ts",
+        "line": 61,
+        "text": "const start = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/benchmark/attenuation-benchmark.ts",
+        "line": 63,
+        "text": "samples[i] = performance.now() - start"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/benchmark/colormatrix-benchmark.ts",
+        "line": 102,
+        "text": "const start = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/benchmark/colormatrix-benchmark.ts",
+        "line": 108,
+        "text": "samples[i] = performance.now() - start"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/benchmark/gain-benchmark.ts",
+        "line": 60,
+        "text": "const start = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/benchmark/gain-benchmark.ts",
+        "line": 62,
+        "text": "samples[i] = performance.now() - start"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/benchmark/markdown-benchmark.ts",
+        "line": 857,
+        "text": "const start = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/benchmark/markdown-benchmark.ts",
+        "line": 859,
+        "text": "const elapsed = performance.now() - start"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/benchmark/markdown-benchmark.ts",
+        "line": 981,
+        "text": "const start = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/benchmark/markdown-benchmark.ts",
+        "line": 983,
+        "text": "const elapsed = performance.now() - start"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/benchmark/markdown-benchmark.ts",
+        "line": 1035,
+        "text": "const start = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/benchmark/markdown-benchmark.ts",
+        "line": 1037,
+        "text": "const elapsed = performance.now() - start"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/benchmark/native-span-feed-async-benchmark.ts",
+        "line": 144,
+        "text": "const iterStart = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/benchmark/native-span-feed-async-benchmark.ts",
+        "line": 157,
+        "text": "const iterElapsed = performance.now() - iterStart"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/benchmark/native-span-feed-benchmark.ts",
+        "line": 453,
+        "text": "const start = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/benchmark/native-span-feed-benchmark.ts",
+        "line": 457,
+        "text": "const elapsedMs = performance.now() - start"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/benchmark/text-table-benchmark.ts",
+        "line": 516,
+        "text": "const start = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/benchmark/text-table-benchmark.ts",
+        "line": 519,
+        "text": "durations.push(performance.now() - start)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/benchmark/text-table-benchmark.ts",
+        "line": 585,
+        "text": "const start = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/benchmark/text-table-benchmark.ts",
+        "line": 588,
+        "text": "durations.push(performance.now() - start)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/benchmark/text-table-benchmark.ts",
+        "line": 664,
+        "text": "const start = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/benchmark/text-table-benchmark.ts",
+        "line": 675,
+        "text": "durations.push(performance.now() - start)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/examples/hast-syntax-highlighting-demo.ts",
+        "line": 69,
+        "text": "const transformStart = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/examples/hast-syntax-highlighting-demo.ts",
+        "line": 71,
+        "text": "const transformEnd = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/examples/hast-syntax-highlighting-demo.ts",
+        "line": 95,
+        "text": "const retransformStart = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/examples/hast-syntax-highlighting-demo.ts",
+        "line": 97,
+        "text": "const retransformEnd = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/examples/lights-phong-demo.ts",
+        "line": 223,
+        "text": "const time = performance.now() / 1000"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/examples/sprite-animation-demo.ts",
+        "line": 337,
+        "text": "const stressTestStartTime = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/examples/sprite-animation-demo.ts",
+        "line": 365,
+        "text": "const stressTestEndTime = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/examples/terminal.ts",
+        "line": 163,
+        "text": "const startTime = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/examples/terminal.ts",
+        "line": 165,
+        "text": "const elapsed = Math.round(performance.now() - startTime)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/clock.ts",
+        "line": 14,
+        "text": "throw new Error(\"SystemClock requires globalThis.performance.now()\")"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/clock.ts",
+        "line": 17,
+        "text": "return globalThis.performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/objects-in-viewport.test.ts",
+        "line": 587,
+        "text": "const start = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/objects-in-viewport.test.ts",
+        "line": 589,
+        "text": "const duration = performance.now() - start"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/objects-in-viewport.test.ts",
+        "line": 600,
+        "text": "const start = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/objects-in-viewport.test.ts",
+        "line": 602,
+        "text": "const duration = performance.now() - start"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/parser.worker.ts",
+        "line": 553,
+        "text": "const startParse = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/parser.worker.ts",
+        "line": 557,
+        "text": "const endParse = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/parser.worker.ts",
+        "line": 573,
+        "text": "const startQuery = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/parser.worker.ts",
+        "line": 630,
+        "text": "const endQuery = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/renderables/TextNode.test.ts",
+        "line": 1047,
+        "text": "const startTime = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/renderables/TextNode.test.ts",
+        "line": 1049,
+        "text": "const endTime = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/renderables/TimeToFirstDraw.ts",
+        "line": 71,
+        "text": "this._runtimeMs = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/renderer.ts",
+        "line": 2323,
+        "text": "const overallStart = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/renderer.ts",
+        "line": 2327,
+        "text": "const animationRequestStart = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/renderer.ts",
+        "line": 2332,
+        "text": "const animationRequestEnd = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/renderer.ts",
+        "line": 2335,
+        "text": "const start = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/renderer.ts",
+        "line": 2343,
+        "text": "const end = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/renderer.ts",
+        "line": 2363,
+        "text": "const overallFrameTime = performance.now() - overallStart"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/testing/test-recorder.ts",
+        "line": 45,
+        "text": "this.now = options?.now ?? (() => performance.now())"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/wrap-resize-perf.test.ts",
+        "line": 22,
+        "text": "const start = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/wrap-resize-perf.test.ts",
+        "line": 30,
+        "text": "return performance.now() - start"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/wrap-resize-perf.test.ts",
+        "line": 263,
+        "text": "const start = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/wrap-resize-perf.test.ts",
+        "line": 265,
+        "text": "times.push(performance.now() - start)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/zig.ts",
+        "line": 1199,
+        "text": "const start = performance.now()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/zig.ts",
+        "line": 1201,
+        "text": "const end = performance.now()"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/editor-kernel.ts",
+        "line": 55,
+        "text": "let blinkStart = performance.now()"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/editor-kernel.ts",
+        "line": 91,
+        "text": "const cursorVisible = ((performance.now() - blinkStart) % 1060) < 530"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/editor-kernel.ts",
+        "line": 110,
+        "text": "blinkStart = performance.now()"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/layout-kernel.ts",
+        "line": 124,
+        "text": "const cursorVisible = ((performance.now() - slot.blinkStart) % 1060) < 530"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/layout-kernel.ts",
+        "line": 139,
+        "text": "blinkStart: performance.now(),"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/layout-kernel.ts",
+        "line": 269,
+        "text": "editorSlot.blinkStart = performance.now()"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/useOpentuiTerminal.ts",
+        "line": 112,
+        "text": "const startedAt = performance.now()"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/useOpentuiTerminal.ts",
+        "line": 120,
+        "text": "const now = performance.now()"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 158,
+        "text": "const startedAt = performance.now()"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 162,
+        "text": "const now = performance.now()"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 265,
+        "text": "const now = performance.now()"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 296,
+        "text": "startedAt = performance.now(); lastSecond = startedAt"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 300,
+        "text": "worker.postMessage({ type: 'frame', t: (performance.now() - startedAt) / 1000, seq: nextSeq++ })"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 399,
+        "text": "const startedAt = performance.now()"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 403,
+        "text": "const now = performance.now()"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 525,
+        "text": "const startedAt = performance.now()"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 529,
+        "text": "const now = performance.now()"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 587,
+        "text": "let lastSecond = performance.now(), framesThisSecond = 0, lastComputeMs = 0"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 634,
+        "text": "const now = performance.now()"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 673,
+        "text": "const startedAt = performance.now()"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 678,
+        "text": "worker.postMessage({ type: 'frame', t: (performance.now() - startedAt) / 1000, seq: nextSeq++ })"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 811,
+        "text": "const startedAt = performance.now()"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 815,
+        "text": "const now = performance.now()"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 923,
+        "text": "const startedAt = performance.now()"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 927,
+        "text": "const now = performance.now()"
+      },
+      {
+        "file": "packages/web-demo/src/routes/life.tsx",
+        "line": 273,
+        "text": "let lastSim = performance.now()"
+      },
+      {
+        "file": "packages/web-demo/src/routes/life.tsx",
+        "line": 274,
+        "text": "let lastSecond = performance.now()"
+      },
+      {
+        "file": "packages/web-demo/src/routes/life.tsx",
+        "line": 280,
+        "text": "const now = performance.now()"
+      },
+      {
+        "file": "packages/web-demo/src/workers/run-worker.ts",
+        "line": 90,
+        "text": "const start = performance.now()"
+      },
+      {
+        "file": "packages/web-demo/src/workers/run-worker.ts",
+        "line": 96,
+        "text": "const computeMs = performance.now() - start"
+      },
+      {
+        "file": "packages/web-demo/src/workers/run-worker.ts",
+        "line": 107,
+        "text": "const computeMs = performance.now() - start"
+      }
+    ],
+    "canvas-2d-transform": [
+      {
+        "file": "packages/opentui/packages/core/src/3d/animation/ExplodingSpriteEffect.ts",
+        "line": 486,
+        "text": "newSprite.setTransform("
+      },
+      {
+        "file": "packages/opentui/packages/core/src/3d/animation/PhysicsExplodingSpriteEffect.ts",
+        "line": 402,
+        "text": "newSprite.setTransform("
+      },
+      {
+        "file": "packages/opentui/packages/core/src/3d/animation/SpriteAnimator.ts",
+        "line": 299,
+        "text": "setTransform(position: THREE.Vector3, rotation: THREE.Quaternion, newScale: THREE.Vector3): void {"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-painter.ts",
+        "line": 134,
+        "text": "this.ctx.setTransform(deviceW / cssW, 0, 0, deviceH / cssH, 0, 0)"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-painter.ts",
+        "line": 160,
+        "text": "ctx.setTransform(1, 0, 0, 1, 0, 0)"
+      }
+    ],
+    "text-encoding": [
+      {
+        "file": "packages/opentui/packages/core/src/benchmark/native-span-feed-benchmark.ts",
+        "line": 62,
+        "text": "const encoder = new TextEncoder()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/buffer.test.ts",
+        "line": 86,
+        "text": "const frameText = new TextDecoder().decode(frameBytes)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/buffer.test.ts",
+        "line": 118,
+        "text": "const frameText = new TextDecoder().decode(frameBytes)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/buffer.test.ts",
+        "line": 134,
+        "text": "const frameText = new TextDecoder().decode(frameBytes)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/buffer.test.ts",
+        "line": 158,
+        "text": "const frameText = new TextDecoder().decode(frameBytes)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/buffer.test.ts",
+        "line": 180,
+        "text": "const frameText = new TextDecoder().decode(frameBytes)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/buffer.test.ts",
+        "line": 207,
+        "text": "const frameText = new TextDecoder().decode(frameBytes)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/buffer.test.ts",
+        "line": 224,
+        "text": "const frameText = new TextDecoder().decode(frameBytes)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/buffer.test.ts",
+        "line": 283,
+        "text": "const text = new TextDecoder().decode(frameBytes)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/buffer.ts",
+        "line": 168,
+        "text": "const realTextLines = new TextDecoder().decode(realTextBytes).split(\"\\n\")"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/compat/ffi.test.ts",
+        "line": 6,
+        "text": "const array = new TextEncoder().encode(\"Hello, world!\")"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/compat/ffi.test.ts",
+        "line": 12,
+        "text": "expect(new TextDecoder().decode(newArrayBuffer)).toBe(\"Hello, world!\")"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/compat/ffi.test.ts",
+        "line": 16,
+        "text": "const array = new TextEncoder().encode(\"Hello, world!\")"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/compat/ffi.test.ts",
+        "line": 27,
+        "text": "const array = new TextEncoder().encode(\"Hello, world!\")"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/compat/nodejs/bun-ffi-structs/index.js",
+        "line": 170,
+        "text": "var encoder = new TextEncoder()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/compat/nodejs/bun-ffi-structs/index.js",
+        "line": 171,
+        "text": "var decoder = new TextDecoder()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/compat/nodejs/runtime.ts",
+        "line": 31,
+        "text": "return new TextEncoder().encode(data).length"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/clipboard.test.ts",
+        "line": 21,
+        "text": "const decoded = new TextDecoder().decode(payload)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/clipboard.ts",
+        "line": 14,
+        "text": "export function encodeOsc52Payload(text: string, encoder: TextEncoder = new TextEncoder()): Uint8Array {"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/paste.ts",
+        "line": 10,
+        "text": "const PASTE_TEXT_DECODER = new TextDecoder()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/stdin-parser.ts",
+        "line": 109,
+        "text": "const KEY_DECODER = new TextDecoder()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/download-utils.ts",
+        "line": 143,
+        "text": "return new TextDecoder().decode(result.content)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/testing/test-recorder.ts",
+        "line": 38,
+        "text": "private decoder = new TextDecoder()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/testing/test-renderer.ts",
+        "line": 18,
+        "text": "const decoder = new TextDecoder()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/native-span-feed-async.test.ts",
+        "line": 56,
+        "text": "syncReceived.push(new TextDecoder().decode(data))"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/native-span-feed-async.test.ts",
+        "line": 59,
+        "text": "const text = new TextDecoder().decode(data)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/native-span-feed-async.test.ts",
+        "line": 64,
+        "text": "const msg = new TextEncoder().encode(\"hello\")"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/native-span-feed-async.test.ts",
+        "line": 110,
+        "text": "received.push(new TextDecoder().decode(data))"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/native-span-feed-async.test.ts",
+        "line": 113,
+        "text": "const msg1 = new TextEncoder().encode(\"A\".repeat(64))"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/native-span-feed-async.test.ts",
+        "line": 116,
+        "text": "const msg2 = new TextEncoder().encode(\"B\".repeat(64))"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/native-span-feed-coverage.test.ts",
+        "line": 8,
+        "text": "const data = new TextEncoder().encode(text)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/native-span-feed-coverage.test.ts",
+        "line": 35,
+        "text": "const msg1 = new TextEncoder().encode(\"pre-queued-1\")"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/native-span-feed-coverage.test.ts",
+        "line": 42,
+        "text": "received.push(new TextDecoder().decode(data))"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/native-span-feed-coverage.test.ts",
+        "line": 47,
+        "text": "const post1 = new TextEncoder().encode(\"post-attach-1\")"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/native-span-feed-coverage.test.ts",
+        "line": 54,
+        "text": "const post2 = new TextEncoder().encode(\"post-attach-2\")"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/native-span-feed-coverage.test.ts",
+        "line": 72,
+        "text": "receivedA.push(new TextDecoder().decode(data))"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/native-span-feed-coverage.test.ts",
+        "line": 75,
+        "text": "receivedB.push(new TextDecoder().decode(data))"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/native-span-feed-coverage.test.ts",
+        "line": 120,
+        "text": "received.push(new TextDecoder().decode(data))"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/native-span-feed-coverage.test.ts",
+        "line": 138,
+        "text": "received.push(new TextDecoder().decode(data))"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/native-span-feed-coverage.test.ts",
+        "line": 146,
+        "text": "received.push(\"B:\" + new TextDecoder().decode(data))"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/native-span-feed-coverage.test.ts",
+        "line": 163,
+        "text": "received.push(new TextDecoder().decode(data))"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/native-span-feed-coverage.test.ts",
+        "line": 171,
+        "text": "const msg = new TextEncoder().encode(`msg${i}`)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/native-span-feed-edge-cases.test.ts",
+        "line": 8,
+        "text": "const data = new TextEncoder().encode(text)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/native-span-feed-edge-cases.test.ts",
+        "line": 29,
+        "text": "received.push(new TextDecoder().decode(data))"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/native-span-feed-edge-cases.test.ts",
+        "line": 67,
+        "text": "const pre = new TextEncoder().encode(\"pre-attach\")"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/native-span-feed-edge-cases.test.ts",
+        "line": 75,
+        "text": "received.push(new TextDecoder().decode(data))"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/native-span-feed-edge-cases.test.ts",
+        "line": 95,
+        "text": "const text = new TextDecoder().decode(data)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/native-span-feed-edge-cases.test.ts",
+        "line": 104,
+        "text": "const msg = new TextEncoder().encode(`s${i}`)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/native-span-feed-edge-cases.test.ts",
+        "line": 148,
+        "text": "allData.push(new TextDecoder().decode(data))"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/native-span-feed-edge-cases.test.ts",
+        "line": 152,
+        "text": "const msg = new TextEncoder().encode(`msg${i.toString().padStart(2, \"0\")}`)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/native-span-feed-edge-cases.test.ts",
+        "line": 293,
+        "text": "calls.push(\"B:\" + new TextDecoder().decode(data))"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/native-span-feed-edge-cases.test.ts",
+        "line": 312,
+        "text": "received.push(new TextDecoder().decode(data))"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/native-span-feed-edge-cases.test.ts",
+        "line": 335,
+        "text": "received.push(new TextDecoder().decode(data))"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/native-span-feed-edge-cases.test.ts",
+        "line": 338,
+        "text": "const next = new TextEncoder().encode(\"inner\")"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/native-span-feed-edge-cases.test.ts",
+        "line": 344,
+        "text": "const first = new TextEncoder().encode(\"outer\")"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/native-span-feed-use-after-free.test.ts",
+        "line": 15,
+        "text": "const data = new TextEncoder().encode(\"hello world\")"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/native-span-feed-use-after-free.test.ts",
+        "line": 21,
+        "text": "expect(new TextDecoder().decode(retained[0])).toBe(\"hello world\")"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/native-span-feed-use-after-free.test.ts",
+        "line": 36,
+        "text": "const data = new TextEncoder().encode(\"before close\")"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/zig.ts",
+        "line": 1660,
+        "text": "readonly encoder: TextEncoder"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/zig.ts",
+        "line": 1661,
+        "text": "readonly decoder: TextDecoder"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/zig.ts",
+        "line": 1852,
+        "text": "public readonly encoder: TextEncoder = new TextEncoder()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/zig.ts",
+        "line": 1853,
+        "text": "public readonly decoder: TextDecoder = new TextDecoder()"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/zig.ts",
+        "line": 2600,
+        "text": "const bytes = typeof data === \"string\" ? new TextEncoder().encode(data) : data"
+      },
+      {
+        "file": "packages/opentui/packages/web/scripts/test-doc-examples.ts",
+        "line": 36,
+        "text": "console.error(\"Failed to init:\", new TextDecoder().decode(init.stderr))"
+      },
+      {
+        "file": "packages/opentui/packages/web/scripts/test-doc-examples.ts",
+        "line": 48,
+        "text": "console.error(\"Failed to install:\", new TextDecoder().decode(install.stderr))"
+      },
+      {
+        "file": "packages/opentui/packages/web/scripts/test-doc-examples.ts",
+        "line": 60,
+        "text": "console.error(\"Failed to install:\", new TextDecoder().decode(installSolid.stderr))"
+      },
+      {
+        "file": "packages/opentui-browser/src/ansi.ts",
+        "line": 10,
+        "text": "const decoder = new TextDecoder()"
+      },
+      {
+        "file": "packages/opentui-browser/src/buffer.ts",
+        "line": 12,
+        "text": "const encoder = new TextEncoder()"
+      },
+      {
+        "file": "packages/opentui-browser/src/edit-buffer.ts",
+        "line": 8,
+        "text": "const encoder = new TextEncoder()"
+      },
+      {
+        "file": "packages/opentui-browser/src/edit-buffer.ts",
+        "line": 9,
+        "text": "const decoder = new TextDecoder()"
+      }
+    ],
+    "canvas-2d-fillrect": [
+      {
+        "file": "packages/opentui/packages/core/src/buffer.ts",
+        "line": 290,
+        "text": "public fillRect(x: number, y: number, width: number, height: number, bg: RGBA): void {"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/console.ts",
+        "line": 780,
+        "text": "this.frameBuffer.fillRect(0, 0, this.consoleWidth, 1, this._rgbaTitleBar)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/console.ts",
+        "line": 848,
+        "text": "this.frameBuffer.fillRect(1 + adjustedStart, lineY, adjustedEnd - adjustedStart, 1, this._rgbaSelection)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/examples/framebuffer-demo.ts",
+        "line": 171,
+        "text": "boxBuffer.fillRect(0, 0, 20, 10, boxColor)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/examples/golden-star-demo.ts",
+        "line": 524,
+        "text": "bandBuffer.fillRect(0, y, bandWidth, 1, color)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/examples/grayscale-buffer-demo.ts",
+        "line": 138,
+        "text": "fb.fillRect(0, 0, totalWidth, totalHeight, bgColor)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/examples/grayscale-buffer-demo.ts",
+        "line": 172,
+        "text": "fb.fillRect(0, 0, totalWidth, headerHeight, headerBg)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/renderables/ASCIIFont.ts",
+        "line": 205,
+        "text": "this.frameBuffer.fillRect(startX, 0, endX - startX, this.height, parseColor(this._selectionBg))"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/renderables/LineNumberRenderable.ts",
+        "line": 265,
+        "text": "buffer.fillRect(startX, startY, this.width, this.height, this._bg)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/renderables/LineNumberRenderable.ts",
+        "line": 294,
+        "text": "buffer.fillRect(startX, startY + i, this.width, 1, lineBg)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/renderables/LineNumberRenderable.ts",
+        "line": 552,
+        "text": "buffer.fillRect(this.x + gutterWidth, this.y + i, contentWidth, 1, lineBg)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/renderables/Select.ts",
+        "line": 189,
+        "text": "this.frameBuffer.fillRect(contentX, itemY, contentWidth, contentHeight, this._selectedBackgroundColor)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/renderables/Slider.ts",
+        "line": 241,
+        "text": "buffer.fillRect(this.x, this.y, this.width, this.height, this._backgroundColor)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/renderables/Slider.ts",
+        "line": 280,
+        "text": "buffer.fillRect(this.x, this.y, this.width, this.height, this._backgroundColor)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/renderables/TabSelect.ts",
+        "line": 163,
+        "text": "this.frameBuffer.fillRect(tabX, contentY, actualTabWidth, 1, this._selectedBackgroundColor)"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/renderables/TextTable.ts",
+        "line": 1045,
+        "text": "buffer.fillRect(cellX, cellY, colWidth, rowHeight, this._backgroundColor)"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-painter.ts",
+        "line": 162,
+        "text": "ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-painter.ts",
+        "line": 207,
+        "text": "ctx.fillRect(x * cellW, py + rem, colW, cellH)"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-painter.ts",
+        "line": 209,
+        "text": "ctx.fillRect(x * cellW, py, colW, rowH)"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-painter.ts",
+        "line": 273,
+        "text": "ctx.fillRect(x * cellW, uy, cellW, 1)"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-painter.ts",
+        "line": 285,
+        "text": "ctx.fillRect(x * cellW, sy, cellW, 1)"
+      },
+      {
+        "file": "packages/opentui-browser/src/draw-helpers.ts",
+        "line": 11,
+        "text": "export function fillRect(buf: OpentuiBuffer, x: number, y: number, w: number, h: number, color: RGBA) {"
+      },
+      {
+        "file": "packages/opentui-browser/src/layout.ts",
+        "line": 181,
+        "text": "if (node.bg) fillRect(buf, x, y, w, h, node.bg)"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/dashboard-kernel.ts",
+        "line": 78,
+        "text": "fillRect(buf, 0, 0, cols, rows, BG)"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/dashboard-kernel.ts",
+        "line": 81,
+        "text": "fillRect(buf, P.header.x, P.header.y, P.header.w, P.header.h, PANEL_BG)"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/editor-kernel.ts",
+        "line": 68,
+        "text": "fillRect(buf, 0, 0, cols, rows, BG)"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/layout-kernel.ts",
+        "line": 105,
+        "text": "fillRect(buf, rect.x, rect.y, rect.width, rect.height, PANEL_BG)"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/layout-kernel.ts",
+        "line": 155,
+        "text": "fillRect(buf, 0, 0, buf.width, buf.height, BG)"
+      }
+    ],
+    "shared-array-buffer": [
+      {
+        "file": "packages/opentui/packages/core/src/compat/nodejs/bun-ffi-structs/types.d.ts",
+        "line": 230,
+        "text": "unpack(buf: ArrayBuffer | SharedArrayBuffer): Simplify<OutputType>"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/compat/nodejs/bun-ffi-structs/types.d.ts",
+        "line": 231,
+        "text": "unpackList(buf: ArrayBuffer | SharedArrayBuffer, count: number): Simplify<OutputType>[]"
+      }
+    ],
+    "storage": [
+      {
+        "file": "packages/opentui/packages/core/src/examples/code-demo.ts",
+        "line": 74,
+        "text": "const saved = localStorage.getItem('todos');"
+      }
+    ],
+    "canvas-2d-measuretext": [
+      {
+        "file": "packages/opentui/packages/core/src/examples/index.ts",
+        "line": 523,
+        "text": "const { width: titleWidth } = measureText({ text: titleText, font: titleFont })"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/lib/ascii.font.ts",
+        "line": 105,
+        "text": "export function measureText({ text, font = \"tiny\" }: { text: string; font?: keyof typeof fonts }): {"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/renderables/ASCIIFont.ts",
+        "line": 56,
+        "text": "const measurements = measureText({ text: text, font })"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/renderables/ASCIIFont.ts",
+        "line": 135,
+        "text": "const measurements = measureText({ text: this._text, font: this._font })"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/renderables/ASCIIFont.ts",
+        "line": 202,
+        "text": ": measureText({ text: this._text, font: this._font }).width"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/renderables/Select.ts",
+        "line": 127,
+        "text": "this.fontHeight = this._font ? measureText({ text: \"A\", font: this._font }).height : 1"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/renderables/Select.ts",
+        "line": 470,
+        "text": "this.fontHeight = measureText({ text: \"A\", font: this._font }).height"
+      },
+      {
+        "file": "packages/opentui/packages/solid/examples/components/ExampleSelector.tsx",
+        "line": 139,
+        "text": "const { width: titleWidth, height: titleHeight } = measureText({ text: titleText, font: titleFont })"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-gl-painter.ts",
+        "line": 193,
+        "text": "const m = mctx.measureText('M')"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-gpu-painter.ts",
+        "line": 219,
+        "text": "const m = mctx.measureText('M')"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-painter.ts",
+        "line": 92,
+        "text": "const m = this.ctx.measureText('M')"
+      }
+    ],
+    "worker": [
+      {
+        "file": "packages/opentui/packages/core/src/lib/tree-sitter/client.ts",
+        "line": 107,
+        "text": "this.worker = new Worker(worker_path)"
+      },
+      {
+        "file": "packages/web-demo/src/routes/counter.tsx",
+        "line": 8,
+        "text": "new Worker(new URL('../workers/counter-worker.ts', import.meta.url), { type: 'module' })"
+      },
+      {
+        "file": "packages/web-demo/src/routes/dashboard.tsx",
+        "line": 9,
+        "text": "new Worker(new URL('../workers/dashboard-worker.ts', import.meta.url), { type: 'module' })"
+      },
+      {
+        "file": "packages/web-demo/src/routes/editor.tsx",
+        "line": 9,
+        "text": "new Worker(new URL('../workers/editor-worker.ts', import.meta.url), { type: 'module' })"
+      },
+      {
+        "file": "packages/web-demo/src/routes/fire.tsx",
+        "line": 9,
+        "text": "new Worker(new URL('../workers/fire-worker.ts', import.meta.url), { type: 'module' })"
+      },
+      {
+        "file": "packages/web-demo/src/routes/layout.tsx",
+        "line": 9,
+        "text": "new Worker(new URL('../workers/layout-worker.ts', import.meta.url), { type: 'module' })"
+      },
+      {
+        "file": "packages/web-demo/src/routes/mandelbrot.tsx",
+        "line": 8,
+        "text": "new Worker(new URL('../workers/mandelbrot-worker.ts', import.meta.url), { type: 'module' })"
+      },
+      {
+        "file": "packages/web-demo/src/routes/matrix.tsx",
+        "line": 9,
+        "text": "new Worker(new URL('../workers/matrix-worker.ts', import.meta.url), { type: 'module' })"
+      },
+      {
+        "file": "packages/web-demo/src/routes/plasma.tsx",
+        "line": 8,
+        "text": "new Worker(new URL('../workers/plasma-worker.ts', import.meta.url), { type: 'module' })"
+      }
+    ],
+    "raf": [
+      {
+        "file": "packages/opentui/packages/core/src/tests/renderer.destroy-during-render.test.ts",
+        "line": 114,
+        "text": "requestAnimationFrame(() => {"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/renderer.idle.test.ts",
+        "line": 197,
+        "text": "requestAnimationFrame(() => {"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/renderer.idle.test.ts",
+        "line": 209,
+        "text": "requestAnimationFrame(() => {"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/tests/renderer.idle.test.ts",
+        "line": 211,
+        "text": "requestAnimationFrame(() => {"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/useOpentuiTerminal.ts",
+        "line": 142,
+        "text": "rafId = requestAnimationFrame(tick)"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/useOpentuiTerminal.ts",
+        "line": 144,
+        "text": "rafId = requestAnimationFrame(tick)"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 180,
+        "text": "rafId = requestAnimationFrame(tick)"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 182,
+        "text": "rafId = requestAnimationFrame(tick)"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 303,
+        "text": "rafId = requestAnimationFrame(tick)"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 305,
+        "text": "rafId = requestAnimationFrame(tick)"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 420,
+        "text": "rafId = requestAnimationFrame(tick)"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 422,
+        "text": "rafId = requestAnimationFrame(tick)"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 539,
+        "text": "rafId = requestAnimationFrame(tick)"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 541,
+        "text": "rafId = requestAnimationFrame(tick)"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 681,
+        "text": "rafId = requestAnimationFrame(tick)"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 683,
+        "text": "rafId = requestAnimationFrame(tick)"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 825,
+        "text": "rafId = requestAnimationFrame(tick)"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 827,
+        "text": "rafId = requestAnimationFrame(tick)"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 937,
+        "text": "rafId = requestAnimationFrame(tick)"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 939,
+        "text": "rafId = requestAnimationFrame(tick)"
+      },
+      {
+        "file": "packages/web-demo/src/routes/life.tsx",
+        "line": 302,
+        "text": "rafId = requestAnimationFrame(tick)"
+      },
+      {
+        "file": "packages/web-demo/src/routes/life.tsx",
+        "line": 304,
+        "text": "rafId = requestAnimationFrame(tick)"
+      }
+    ],
+    "css-dvh-dvw": [
+      {
+        "file": "packages/opentui/packages/web/src/styles/global.css",
+        "line": 199,
+        "text": "height: calc(100dvh - var(--header-height));"
+      },
+      {
+        "file": "packages/opentui/packages/web/src/styles/global.css",
+        "line": 1187,
+        "text": "height: calc(100dvh - var(--header-height));"
+      }
+    ],
+    "device-pixel-ratio": [
+      {
+        "file": "packages/opentui-browser/src/canvas-gl-painter.ts",
+        "line": 121,
+        "text": "this.dpr = window.devicePixelRatio || 1"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-gpu-painter.ts",
+        "line": 121,
+        "text": "this.dpr = window.devicePixelRatio || 1"
+      }
+    ],
+    "webgl-context": [
+      {
+        "file": "packages/opentui-browser/src/canvas-gl-painter.ts",
+        "line": 122,
+        "text": "const gl = canvas.getContext('webgl2', { alpha: false, antialias: false, premultipliedAlpha: false })"
+      }
+    ],
+    "webgl-api": [
+      {
+        "file": "packages/opentui-browser/src/canvas-gl-painter.ts",
+        "line": 134,
+        "text": "gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]), gl.STATIC_DRAW)"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-gl-painter.ts",
+        "line": 165,
+        "text": "const sh = gl.createShader(type)!"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-gl-painter.ts",
+        "line": 166,
+        "text": "gl.shaderSource(sh, src)"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-gl-painter.ts",
+        "line": 167,
+        "text": "gl.compileShader(sh)"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-gl-painter.ts",
+        "line": 225,
+        "text": "gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, atlasCanvas)"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-gl-painter.ts",
+        "line": 258,
+        "text": "gl.bufferData(gl.ARRAY_BUFFER, this.instanceData, gl.DYNAMIC_DRAW)"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-gl-painter.ts",
+        "line": 308,
+        "text": "gl.uniform1i(this.uniforms.u_atlas!, 0)"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-gl-painter.ts",
+        "line": 309,
+        "text": "gl.uniform2f(this.uniforms.u_cellSize!, this.cellWidth * this.dpr, this.cellHeight * this.dpr)"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-gl-painter.ts",
+        "line": 310,
+        "text": "gl.uniform2f(this.uniforms.u_resolution!, this.canvas.width, this.canvas.height)"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-gl-painter.ts",
+        "line": 311,
+        "text": "gl.uniform2f(this.uniforms.u_atlasGrid!, this.atlas.cols, this.atlas.rows)"
+      }
+    ],
+    "canvas-2d-context": [
+      {
+        "file": "packages/opentui-browser/src/canvas-gl-painter.ts",
+        "line": 190,
+        "text": "const mctx = measureCanvas.getContext('2d')!"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-gl-painter.ts",
+        "line": 205,
+        "text": "const actx = atlasCanvas.getContext('2d')!"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-gpu-painter.ts",
+        "line": 216,
+        "text": "const mctx = measureCanvas.getContext('2d')!"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-gpu-painter.ts",
+        "line": 231,
+        "text": "const actx = atlasCanvas.getContext('2d')!"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-painter.ts",
+        "line": 80,
+        "text": "const ctx = canvas.getContext('2d', { alpha: false })"
+      }
+    ],
+    "canvas-2d-textbaseline": [
+      {
+        "file": "packages/opentui-browser/src/canvas-gl-painter.ts",
+        "line": 192,
+        "text": "mctx.textBaseline = 'top'"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-gl-painter.ts",
+        "line": 208,
+        "text": "actx.textBaseline = 'top'"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-gpu-painter.ts",
+        "line": 218,
+        "text": "mctx.textBaseline = 'top'"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-gpu-painter.ts",
+        "line": 234,
+        "text": "actx.textBaseline = 'top'"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-painter.ts",
+        "line": 91,
+        "text": "this.ctx.textBaseline = 'top'"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-painter.ts",
+        "line": 136,
+        "text": "this.ctx.textBaseline = 'top'"
+      }
+    ],
+    "canvas-2d-text": [
+      {
+        "file": "packages/opentui-browser/src/canvas-gl-painter.ts",
+        "line": 216,
+        "text": "actx.fillText(String.fromCodePoint(cp), gx * cellPxW, gy * cellPxH)"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-gpu-painter.ts",
+        "line": 242,
+        "text": "actx.fillText(String.fromCodePoint(cp), gx * cellPxW, gy * cellPxH)"
+      },
+      {
+        "file": "packages/opentui-browser/src/canvas-painter.ts",
+        "line": 262,
+        "text": "ctx.fillText(stringForCp(ch), x * cellW, pyc + voff)"
+      }
+    ],
+    "resize-observer": [
+      {
+        "file": "packages/web-demo/src/demo-lib/useOpentuiTerminal.ts",
+        "line": 57,
+        "text": "let resizeObserver: ResizeObserver | undefined"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/useOpentuiTerminal.ts",
+        "line": 100,
+        "text": "resizeObserver = new ResizeObserver(() => {"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 120,
+        "text": "let ro: ResizeObserver | undefined"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 151,
+        "text": "ro = new ResizeObserver(() => {"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 232,
+        "text": "let ro: ResizeObserver | undefined"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 289,
+        "text": "ro = new ResizeObserver(() => {"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 352,
+        "text": "let ro: ResizeObserver | undefined"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 392,
+        "text": "ro = new ResizeObserver(() => {"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 466,
+        "text": "let ro: ResizeObserver | undefined"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 495,
+        "text": "ro = new ResizeObserver(() => {"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 580,
+        "text": "let ro: ResizeObserver | undefined"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 666,
+        "text": "ro = new ResizeObserver(() => {"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 749,
+        "text": "let ro: ResizeObserver | undefined"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 784,
+        "text": "ro = new ResizeObserver(() => {"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 862,
+        "text": "let ro: ResizeObserver | undefined"
+      },
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 899,
+        "text": "ro = new ResizeObserver(() => {"
+      },
+      {
+        "file": "packages/web-demo/src/routes/life.tsx",
+        "line": 76,
+        "text": "let resizeObserver: ResizeObserver | undefined"
+      },
+      {
+        "file": "packages/web-demo/src/routes/life.tsx",
+        "line": 260,
+        "text": "resizeObserver = new ResizeObserver(() => {"
+      }
+    ],
+    "clipboard": [
+      {
+        "file": "packages/web-demo/src/demo-lib/variants.tsx",
+        "line": 32,
+        "text": "navigator.clipboard.writeText(gridToText(grid)).catch(() => {"
+      }
+    ],
+    "pointer-events": [
+      {
+        "file": "packages/web-demo/src/routes/life.tsx",
+        "line": 164,
+        "text": "function pixelFromEvent(e: PointerEvent | MouseEvent): { x: number; y: number } | null {"
+      }
+    ]
+  },
+  "absences": {
+    "shared-array-buffer": [
+      {
+        "file": "packages/opentui/packages/core/src/compat/nodejs/bun-ffi-structs/types.d.ts",
+        "line": 230,
+        "text": "unpack(buf: ArrayBuffer | SharedArrayBuffer): Simplify<OutputType>"
+      },
+      {
+        "file": "packages/opentui/packages/core/src/compat/nodejs/bun-ffi-structs/types.d.ts",
+        "line": 231,
+        "text": "unpackList(buf: ArrayBuffer | SharedArrayBuffer, count: number): Simplify<OutputType>[]"
+      }
+    ]
+  }
+}

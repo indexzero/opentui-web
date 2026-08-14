@@ -1,0 +1,9 @@
+{
+  "name": "@opentui-web/audit",
+  "private": true,
+  "type": "module",
+  "description": "periodic browser-compat audit tooling",
+  "dependencies": {
+    "@mdn/browser-compat-data": "^8.0.8"
+  }
+}
