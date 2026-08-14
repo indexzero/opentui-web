@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Canvas2D implemented; consumer verification pending |
+| Status | Hack 11 Canvas2D complete; accelerated-painter parity pending |
 | Planned branch | `washe/hack/11` |
 | Depends on | `washe/hack/10` (`paintOver` and background-alpha compositing) |
 | Origin | Consumer report: shared half-cell padding around picker selection bands |
@@ -830,19 +830,19 @@ machinery without expanding the acceptance surface beyond Block Elements.
 
 Hack 11 is complete when all of the following are true:
 
-- [ ] The complete U+2580–U+259F decoder is checked in and exhaustively tested.
-- [ ] Canvas2D never sends a recognized Block Element to `fillText`.
-- [ ] Canvas2D opaque rendering has exact font-independent block edges.
-- [ ] Canvas2D `paintOver` independently composes foreground and background
+- [x] The complete U+2580–U+259F decoder is checked in and exhaustively tested.
+- [x] Canvas2D never sends a recognized Block Element to `fillText`.
+- [x] Canvas2D opaque rendering has exact font-independent block edges.
+- [x] Canvas2D `paintOver` independently composes foreground and background
       coverage, including transparent halves and shades.
-- [ ] Odd dimensions and fractional DPR have no missing or double-composited edge
+- [x] Odd dimensions and fractional DPR have no missing or double-composited edge
       pixels.
-- [ ] Existing glyph decorations, stretched rows, final columns, and
+- [x] Existing glyph decorations, stretched rows, final columns, and
       `FLUSH_BOTTOM` behavior remain covered.
-- [ ] Main-thread and worker Canvas2D paths match.
-- [ ] A reference Consumer can preserve sampled transparent foreground alpha.
-- [ ] The reference Consumer's integration sweep passes without teeth, black
-      bars, seams, or asymmetric font ink.
+- [x] Main-thread and worker Canvas2D paths match.
+- [x] A reference Consumer can preserve sampled transparent foreground alpha.
+- [x] The reference Consumer's integration sweep passes without teeth, black
+      bars, seams, or asymmetric Block Element coverage.
 - [ ] The README accurately states Canvas2D/GL/GPU support at every landing stage.
 - [ ] WebGL2 uses procedural Block Element coverage and passes parity tests.
 - [ ] WebGPU uses procedural Block Element coverage and passes parity tests.
@@ -854,6 +854,27 @@ If the branch intentionally stops after the Canvas2D phase, call that milestone
 “Hack 11 Canvas2D complete,” leave the overall record `Partially implemented`,
 and keep the GL/GPU checklist open. Do not mark the full hack complete while a
 direct painter still claims the range through its font atlas.
+
+### Canvas2D implementation record
+
+- Fork implementation: `b67e895980c158fbfb5d6a3b73e57a6e881f47a4` on
+  `washe/hack/11`.
+- Package verification: 11 decoder/painter tests, package typecheck, and the
+  browser demo build passed.
+- Reference Consumer cleanup: `90ace881` preserves the sampler's complete RGBA
+  tuple; `b5093a99` adds exact backing-store assertions and reviewed baselines;
+  `9ef0027f` corrects rendering and vendoring documentation.
+- Runtime matrix: widths 646 and 650 CSS px, Geist Mono, Fragment Mono, and
+  System, at DPR1 and DPR2, plus a live-ambient smoke case. All 14 focused cases
+  passed. The full browser run passed 274 unchanged cases; its 16 expected
+  Block Element baseline failures were reviewed, updated in 14 unique images,
+  and the 16 affected cases then passed exactly.
+- Consumer unit/coverage verification: 103 files and 1,898 tests passed; build,
+  typecheck, and scoped lint passed.
+- Ordinary text remains top-baselined. Optical whitespace measured from band
+  edges to glyph ink can therefore be asymmetric even though the top and bottom
+  Block Element coverage is exactly half a cell. That is a separate text-layout
+  policy, not unfinished Block Element geometry.
 
 ## Rollback
 
