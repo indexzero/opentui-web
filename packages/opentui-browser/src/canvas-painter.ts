@@ -38,7 +38,7 @@ export interface CanvasPainterOptions {
   fontFamily?: string
   // washe local fix (#104): painter-wide default vertical alignment of a
   // glyph within its (taller) cell box. 'top' (default) is byte-identical to
-  // upstream; 'middle'/'bottom' derive the offset from metrics (see paint()).
+  // upstream; 'middle'/'bottom' align a shared measured ink box (see paint()).
   // A per-cell VALIGN in attr bits 4-5 overrides this default.
   cellVAlign?: 'top' | 'middle' | 'bottom'
   // washe local fix (canvas-host overhaul): the page background painted under
@@ -82,6 +82,10 @@ export class CanvasPainter {
   // fontFamily setter is ever added it must re-run measureCell to re-derive these.
   private underlineOffset = 0
   private strikeOffset = 0
+  // One reference for the whole font, not one box per character: capitals,
+  // lowercase, descenders, bold and italic must share a baseline. Signed ink
+  // extents from the actual top anchor account for the engine's baseline.
+  private alignmentMetrics: { ascent: number; descent: number } | null = null
 
   constructor(canvas: HTMLCanvasElement, opts: CanvasPainterOptions = {}) {
     this.canvas = canvas
@@ -107,9 +111,9 @@ export class CanvasPainter {
     this.cellHeight = Math.max(1, Math.round(this.fontSize * 1.2))
     // washe local fix (#6/#148, engine-independent baseline): measure the
     // alphabetic baseline THIS engine will actually draw instead of assuming it.
-    // With textBaseline='top' the top of the glyph sits at the anchor; 'M' has no
-    // descender, so its actualBoundingBoxDescent is exactly the anchor→baseline
-    // distance as rendered (larger on WebKit than the old Blink-tuned fontSize-4).
+    // 'M' has no descender, so actualBoundingBoxDescent gives the top-anchor to
+    // alphabetic-baseline distance. The glyph's ink top need not be at that
+    // anchor, and WebKit places its baseline lower than Blink for the same font.
     // Underline sits 1px under that baseline; strike rides the x-height center.
     const bfd = m.actualBoundingBoxDescent
     // x-height = the INK-BOX HEIGHT of 'x' (ascent+descent = total box extent,
@@ -121,12 +125,9 @@ export class CanvasPainter {
     const xm = this.ctx.measureText('x')
     const xHeight = (xm.actualBoundingBoxAscent ?? 0) + (xm.actualBoundingBoxDescent ?? 0)
     if (bfd && bfd > 0) {
-      // Ceiling cellHeight-1 = the last row a 1px rule can occupy fully inside
-      // the cell (fillRect at cellHeight-1 spans [cellHeight-1, cellHeight)), so
-      // a large measured baseline is never capped UP onto the glyph — the very
-      // regime this fix targets (WebKit's baseline sits low). Matches the paint
-      // clamp and the fallback. Floor at 0 guards a degenerate tiny fontSize.
-      this.underlineOffset = Math.max(0, Math.min(this.cellHeight - 1, Math.round(bfd) + 1))
+      // Clamp to the painted cell only after alignment: its offset can be
+      // negative when the engine's top anchor puts the baseline too low.
+      this.underlineOffset = Math.max(0, Math.round(bfd) + 1)
       const halfX = xHeight > 0 ? xHeight / 2 : this.fontSize / 4
       this.strikeOffset = Math.max(0, Math.round(bfd - halfX))
     } else {
@@ -134,6 +135,12 @@ export class CanvasPainter {
       // Blink-calibrated constants so behaviour there is byte-identical to before.
       this.underlineOffset = Math.min(this.cellHeight - 1, this.fontSize - 4)
       this.strikeOffset = Math.round(this.fontSize / 2)
+    }
+    const ink = this.ctx.measureText('Mg')
+    const ascent = ink.actualBoundingBoxAscent
+    const descent = ink.actualBoundingBoxDescent
+    if (Number.isFinite(ascent) && Number.isFinite(descent) && ascent + descent > 0) {
+      this.alignmentMetrics = { ascent, descent }
     }
   }
 
@@ -312,11 +319,10 @@ export class CanvasPainter {
         const fgKey =
           fa >= 1 ? `rgb(${fr},${fgg},${fb})` : `rgba(${fr},${fgg},${fb},${fa})`
         const block = decodeBlockElement(ch)
-        // washe local fix (#104): per-cell vertical alignment. VALIGN rides
-        // attr bits 4-5 (0=top, 1=middle, 2=bottom); 0 falls back to the
-        // painter-wide default. The offset is DERIVED FROM METRICS — never a
-        // hardcoded pixel — so it self-scales with fontSize/dpr. va=0 ⇒
-        // voff=0, byte-identical to upstream for non-opted cells.
+        // Per-cell vertical alignment. VALIGN rides attr bits 4-5; 0 falls
+        // back to the painter default. The top path retains its original
+        // Canvas top anchor. Aligned cells use the same measured Mg reference,
+        // so the baseline never jumps per character.
         const vaBits = (ai >> 4) & 3
         const va = vaBits !== 0 ? vaBits : this.cellVAlignDefault
         // washe local fix (#463): the LAST row STRETCHES to swallow the sub-cell
@@ -329,8 +335,12 @@ export class CanvasPainter {
           y === height - 1 && (ai & ATTR_FLUSH_BOTTOM) === 0
             ? Math.max(cellH, this.cssHeight - py)
             : cellH
-        const voff =
-          va === 1 ? Math.round((vaH - this.fontSize) / 2) : va === 2 ? vaH - this.fontSize : 0
+        const aligned = va === 1 || va === 2 ? this.alignmentMetrics : null
+        const voff = aligned
+          ? va === 1
+            ? Math.round((vaH + aligned.ascent - aligned.descent) / 2)
+            : vaH - aligned.descent
+          : va === 1 ? Math.round((vaH - this.fontSize) / 2) : va === 2 ? vaH - this.fontSize : 0
         if (block !== null) {
           const ba = bg[fi + 3]!
           const br = (bg[fi]! * 255) | 0
@@ -380,15 +390,9 @@ export class CanvasPainter {
             ctx.fillStyle = fgKey
             lastFg = fgKey
           }
-          // washe local fix (#6, engine-independent baseline): pin the underline
-          // just under the MEASURED glyph baseline (underlineOffset, from
-          // measureCell), not the cell bottom and not a Blink-tuned fontSize-4
-          // guess. textBaseline is 'top', so the glyph top is at pyc+voff; the
-          // measured offset drops the rule right under the letterforms on every
-          // engine (WebKit's baseline sits lower than Blink's for this font, so
-          // the old constant crossed the glyphs like a strike). Tracks voff so a
-          // valign-shifted glyph keeps its underline; clamped to the cell bottom.
-          const uy = Math.min(pyc + cellH - 1, pyc + voff + this.underlineOffset)
+          // Follow the measured baseline and the same alignment as the glyph.
+          // Clamp after alignment, including a stretched final cell.
+          const uy = Math.min(pyc + (aligned ? vaH : cellH) - 1, pyc + voff + this.underlineOffset)
           ctx.fillRect(x * cellW, uy, cellW, 1)
         }
         if (ai & ATTR_STRIKETHROUGH) {
@@ -396,13 +400,8 @@ export class CanvasPainter {
             ctx.fillStyle = fgKey
             lastFg = fgKey
           }
-          // washe local fix (#148, engine-independent baseline): a rule through
-          // the x-height CENTER (strikeOffset = measured baseline − ½ x-height,
-          // from measureCell), tracking voff like the underline so a
-          // valign-shifted glyph keeps its strike. Replaces the fontSize/2 guess,
-          // which — with WebKit's lower baseline — drifted off the letter middle.
-          // Clamped into the cell.
-          const sy = Math.min(pyc + cellH - 1, pyc + voff + this.strikeOffset)
+          // The strike follows the measured x-height center and glyph alignment.
+          const sy = Math.min(pyc + (aligned ? vaH : cellH) - 1, pyc + voff + this.strikeOffset)
           ctx.fillRect(x * cellW, sy, cellW, 1)
         }
       }
