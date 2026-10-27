@@ -218,8 +218,7 @@ export class CanvasPainter {
   }
 
   // The two full-grid passes (backgrounds, then chars) shared by paint() and
-  // paintOver(). honorBgAlpha=false is byte-identical to the historical paint()
-  // body: bg alpha is IGNORED and every cell fills opaque rgb(...).
+  // paintOver(). honorBgAlpha=false ignores bg alpha and fills opaque rgb(...).
   private paintCells(input: OpentuiBuffer | CellGrid, honorBgAlpha: boolean) {
     const { width, height, chars, fg, bg, attrs } = 'snapshot' in input ? input.snapshot() : input
     if (width !== this.cols || height !== this.rows) {
@@ -231,7 +230,6 @@ export class CanvasPainter {
     const ctx = this.ctx
     const scaleX = this.cssWidth > 0 ? this.canvas.width / this.cssWidth : 1
     const scaleY = this.cssHeight > 0 ? this.canvas.height / this.cssHeight : 1
-    const alignedColumns = Number.isInteger(cellW * scaleX)
 
     let lastBg = ''
     let lastFg = ''
@@ -244,8 +242,9 @@ export class CanvasPainter {
     const rem = this.cssHeight > 0 ? Math.max(0, this.cssHeight - height * cellH) : 0
 
     // All backgrounds precede all glyphs so a later cell cannot erase the
-    // overhang of a wide glyph. Merge only opaque, device-aligned rectangles:
-    // removing an antialiased internal edge can otherwise change pixels.
+    // overhang of a wide glyph. Backgrounds share rounded device edges, like
+    // procedural blocks, so fractional zoom cannot expose antialiased seams.
+    // Opaque runs can then merge without retaining their internal cell edges.
     for (let y = 0; y < height; y++) {
       const py = y * cellH
       // washe local fix (canvas-host overhaul): the cell grid is whole cells, so
@@ -257,11 +256,11 @@ export class CanvasPainter {
       // extend page bg (invisible). cssWidth/cssHeight default 0 for legacy
       // callers that never call setViewport, so Math.max keeps the plain cellW/cellH.
       const rowH = y === height - 1 ? Math.max(cellH, this.cssHeight - py) : cellH
-      const alignedRow = alignedColumns && Number.isInteger(py * scaleY)
-        && Number.isInteger((py + rowH) * scaleY)
-      const alignedFlush = alignedColumns && y === height - 1
-        && Number.isInteger((py + rem) * scaleY)
-        && Number.isInteger((py + rem + cellH) * scaleY)
+      const rowTop = Math.round(py * scaleY) / scaleY
+      const rowBottom = Math.round((py + rowH) * scaleY) / scaleY
+      const flushTop = y === height - 1 ? Math.round((py + rem) * scaleY) / scaleY : rowTop
+      const flushBottomEdge = y === height - 1
+        ? Math.round((py + rem + cellH) * scaleY) / scaleY : rowBottom
       for (let x = 0; x < width; x++) {
         const i = y * width + x
         const fi = i * 4
@@ -279,7 +278,6 @@ export class CanvasPainter {
         const bgg = (bg[fi + 1]! * 255) | 0
         const bb = (bg[fi + 2]! * 255) | 0
         const bgKey = ba >= 1 ? `rgb(${br},${bgg},${bb})` : `rgba(${br},${bgg},${bb},${ba})`
-        let colW = x === width - 1 ? Math.max(cellW, this.cssWidth - x * cellW) : cellW
         // washe local fix (#178): a FLUSH_BOTTOM cell on the last row anchors at
         // its natural cellH against the BOTTOM edge (py+rem .. cssHeight) instead
         // of stretching the whole cell up by the remainder — the wc-bar stays one
@@ -288,10 +286,9 @@ export class CanvasPainter {
         // stretch (substrate, fullscreen effects, edge-to-edge code panels).
         const flushBottom = y === height - 1 && (attrs[i]! & ATTR_FLUSH_BOTTOM) !== 0
         const px = x * cellW
-        const fillY = flushBottom ? py + rem : py
-        const fillH = flushBottom ? cellH : rowH
-        if (ba >= 1 && (flushBottom ? alignedFlush : alignedRow)
-          && Number.isInteger(px * scaleX) && Number.isInteger((px + colW) * scaleX)) {
+        const fillY = flushBottom ? flushTop : rowTop
+        const fillBottom = flushBottom ? flushBottomEdge : rowBottom
+        if (ba >= 1) {
           while (x + 1 < width) {
             const next = y * width + x + 1
             const nf = next * 4
@@ -300,18 +297,18 @@ export class CanvasPainter {
             if (((bg[nf]! * 255) | 0) !== br || ((bg[nf + 1]! * 255) | 0) !== bgg
               || ((bg[nf + 2]! * 255) | 0) !== bb) break
             if (y === height - 1 && ((attrs[next]! & ATTR_FLUSH_BOTTOM) !== 0) !== flushBottom) break
-            const nextW = x + 1 === width - 1
-              ? Math.max(cellW, this.cssWidth - (x + 1) * cellW) : cellW
-            if (!Number.isInteger(((x + 1) * cellW + nextW) * scaleX)) break
-            colW += nextW
             x++
           }
         }
+        const left = Math.round(px * scaleX) / scaleX
+        const end = x === width - 1 ? Math.max((x + 1) * cellW, this.cssWidth) : (x + 1) * cellW
+        const right = Math.round(end * scaleX) / scaleX
+        if (right <= left || fillBottom <= fillY) continue
         if (bgKey !== lastBg) {
           ctx.fillStyle = bgKey
           lastBg = bgKey
         }
-        ctx.fillRect(px, fillY, colW, fillH)
+        ctx.fillRect(left, fillY, right - left, fillBottom - fillY)
       }
     }
 

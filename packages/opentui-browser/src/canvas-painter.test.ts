@@ -176,11 +176,11 @@ describe('CanvasPainter background runs', () => {
     })))
   })
 
-  it.each([[1.25, 3], [1.5, 1], [2.05, 3]])(
-    'uses actual device edges at scale %s (%s fills)', (dpr, count) => {
+  it.each([0.9, 1.1, 1.25, 1.5, 1.8, 2.05, 2.2])(
+    'merges opaque backgrounds across fractional cell edges at scale %s', dpr => {
       const { context, painter } = harness(3, 1, dpr)
       painter.paintOver(grid([0x20, 0x20, 0x20]))
-      expect(context.fills).toHaveLength(count)
+      expect(context.fills).toHaveLength(1)
     },
   )
 
@@ -196,16 +196,49 @@ describe('CanvasPainter background runs', () => {
     ])
   })
 
-  it('falls back when vertical edges are fractional, even with aligned columns', () => {
+  it('snaps the bottom-flush band to device rows at fractional vertical scale', () => {
     const { context, painter } = harness(3)
     painter.setViewport(30, 19, 30, 17)
     const cells = grid([0x20, 0x20, 0x20])
     cells.attrs.fill(0x40)
     painter.paintOver(cells)
-    expect(context.fills).toEqual([0, 10, 20].map(x => ({
-      style: 'rgb(0,0,255)', x, y: 5, width: 10, height: 12,
-    })))
+    expect(context.fills).toHaveLength(1)
+    const fill = context.fills[0]!
+    expect(fill.y * 19 / 17).toBeCloseTo(6)
+    expect((fill.y + fill.height) * 19 / 17).toBeCloseTo(19)
+    expect(fill.width).toBe(30)
   })
+
+  it.each([0.9, 1.1, 1.25, 1.8, 2.2, 2.625])(
+    'tiles translucent and differently colored cells without gaps or overlap at scale %s', dpr => {
+      const { context, painter } = harness(4, 2, dpr)
+      const cssW = 43.25, cssH = 27.5
+      const deviceW = Math.round(cssW * dpr), deviceH = Math.round(cssH * dpr)
+      painter.setViewport(deviceW, deviceH, cssW, cssH)
+      const cells = { ...grid(Array(8).fill(0x20), [0, 0, 0, 0], [0, 0, 1, 0.5]), width: 4, height: 2 }
+      for (let i = 1; i < 8; i += 2) cells.bg.set([1, 0, 0, 0.5], i * 4)
+      painter.paintOver(cells)
+      expect(context.fills).toHaveLength(8)
+      const sx = deviceW / cssW, sy = deviceH / cssH
+      const edges = context.fills.map(f => ({
+        left: f.x * sx, right: (f.x + f.width) * sx,
+        top: f.y * sy, bottom: (f.y + f.height) * sy,
+      }))
+      for (const edge of edges) for (const value of Object.values(edge)) {
+        expect(value).toBeCloseTo(Math.round(value), 10)
+      }
+      for (let y = 0; y < 2; y++) {
+        expect(edges[y * 4]!.left).toBe(0)
+        expect(edges[y * 4 + 3]!.right).toBeCloseTo(deviceW)
+        for (let x = 1; x < 4; x++) expect(edges[y * 4 + x]!.left).toBeCloseTo(edges[y * 4 + x - 1]!.right)
+      }
+      for (let x = 0; x < 4; x++) {
+        expect(edges[x]!.top).toBe(0)
+        expect(edges[x]!.bottom).toBeCloseTo(edges[4 + x]!.top)
+        expect(edges[4 + x]!.bottom).toBeCloseTo(deviceH)
+      }
+    },
+  )
 
   it('finishes every background before drawing wide or decorated glyphs', () => {
     const { context, painter } = harness(2, 2)
