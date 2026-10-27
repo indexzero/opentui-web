@@ -132,3 +132,90 @@ describe('CanvasPainter Block Elements', () => {
     expect(context.texts).toEqual([{ text: 'A', x: 0, y: 0 }])
   })
 })
+
+describe('CanvasPainter background runs', () => {
+  it('reduces a uniform 48 by 49 grid to one background fill per row', () => {
+    const { context, painter } = harness(48, 49, 3)
+    const cells = { ...grid(Array(48 * 49).fill(0x20)), width: 48, height: 49 }
+    painter.paint(cells)
+    expect(context.fills).toHaveLength(50) // full canvas clear + 49 rows
+    expect(context.fills.slice(1)).toEqual(Array.from({ length: 49 }, (_, y) => ({
+      style: 'rgb(0,0,255)', x: 0, y: y * 12, width: 480, height: 12,
+    })))
+  })
+
+  it('groups effective CSS colors while ignoring alpha only in opaque paint', () => {
+    const { context, painter } = harness(3)
+    const cells = grid([0x20, 0x20, 0x20])
+    cells.bg.set([0.5, 0, 0, 0], 0)
+    cells.bg.set([0.5001, 0, 0, 0.5], 4)
+    cells.bg.set([0, 1, 0, 1], 8)
+    painter.paint(cells)
+    expect(context.fills.slice(1)).toEqual([
+      { style: 'rgb(127,0,0)', x: 0, y: 0, width: 20, height: 12 },
+      { style: 'rgb(0,255,0)', x: 20, y: 0, width: 10, height: 12 },
+    ])
+  })
+
+  it('does not join backgrounds across transparent cells or block elements', () => {
+    const { context, painter } = harness(5)
+    const cells = grid([0x20, 0x20, 0x20, 0x2580, 0x20])
+    cells.bg[7] = 0
+    painter.paintOver(cells)
+    expect(context.fills.slice(0, 3)).toEqual([0, 20, 40].map(x => ({
+      style: 'rgb(0,0,255)', x, y: 0, width: 10, height: 12,
+    })))
+    expect(context.fills).toHaveLength(5) // then the two block regions
+  })
+
+  it('retains individual translucent fills', () => {
+    const { context, painter } = harness(3)
+    painter.paintOver(grid([0x20, 0x20, 0x20], [1, 0, 0, 1], [0, 0, 1, 0.5]))
+    expect(context.fills).toEqual([0, 10, 20].map(x => ({
+      style: 'rgba(0,0,255,0.5)', x, y: 0, width: 10, height: 12,
+    })))
+  })
+
+  it.each([[1.25, 3], [1.5, 1], [2.05, 3]])(
+    'uses actual device edges at scale %s (%s fills)', (dpr, count) => {
+      const { context, painter } = harness(3, 1, dpr)
+      painter.paintOver(grid([0x20, 0x20, 0x20]))
+      expect(context.fills).toHaveLength(count)
+    },
+  )
+
+  it('keeps bottom-flush runs separate and extends the final column to the edge', () => {
+    const { context, painter } = harness(4)
+    painter.setViewport(43, 17, 43, 17)
+    const cells = grid([0x20, 0x20, 0x20, 0x20])
+    cells.attrs.set([0, 0, 0x40, 0x40])
+    painter.paintOver(cells)
+    expect(context.fills).toEqual([
+      { style: 'rgb(0,0,255)', x: 0, y: 0, width: 20, height: 17 },
+      { style: 'rgb(0,0,255)', x: 20, y: 5, width: 23, height: 12 },
+    ])
+  })
+
+  it('falls back when vertical edges are fractional, even with aligned columns', () => {
+    const { context, painter } = harness(3)
+    painter.setViewport(30, 19, 30, 17)
+    const cells = grid([0x20, 0x20, 0x20])
+    cells.attrs.fill(0x40)
+    painter.paintOver(cells)
+    expect(context.fills).toEqual([0, 10, 20].map(x => ({
+      style: 'rgb(0,0,255)', x, y: 5, width: 10, height: 12,
+    })))
+  })
+
+  it('finishes every background before drawing wide or decorated glyphs', () => {
+    const { context, painter } = harness(2, 2)
+    const events: string[] = []
+    const fillRect = context.fillRect.bind(context)
+    context.fillRect = (...args) => { events.push('rect'); fillRect(...args) }
+    context.fillText = () => { events.push('text') }
+    const cells = { ...grid([0x754c, 0x20, 0x41, 0x42]), width: 2, height: 2 }
+    cells.attrs[3] = 0x88
+    painter.paintOver(cells)
+    expect(events).toEqual(['rect', 'rect', 'text', 'text', 'text', 'rect', 'rect'])
+  })
+})
