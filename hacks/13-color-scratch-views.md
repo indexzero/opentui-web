@@ -15,3 +15,8 @@ existing lifetime rules; this patch does not cache them or change the WASM ABI.
 `buffer.test.ts` exercises the real WASM module, all grid channels, mutable
 colors, memory growth including `grow(0)`, constructor/text allocations,
 another buffer's allocation, and resize. Node types are a test dependency.
+
+The browser `tsconfig.json` excludes tests and exposes only WebGPU globals
+beyond the standard ES and DOM libraries. `tsconfig.test.json` extends it
+with Node types for the WASM fixture loader. The package's `typecheck` script
+checks both environments, and the typecheck workflow runs it in CI.
