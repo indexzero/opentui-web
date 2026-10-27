@@ -18,6 +18,8 @@ export class OpentuiBuffer {
   // scratch slots in WASM linear memory
   private readonly fgScratch: number
   private readonly bgScratch: number
+  private fgView: Float32Array
+  private bgView: Float32Array
   private textScratchPtr = 0
   private textScratchLen = 0
 
@@ -31,6 +33,9 @@ export class OpentuiBuffer {
     this.height = height
     this.fgScratch = mod.opentuiAlloc(RGBA_BYTES)
     this.bgScratch = mod.opentuiAlloc(RGBA_BYTES)
+    // Either allocation can grow memory; create both views afterwards.
+    this.fgView = new Float32Array(mod.memory.buffer, this.fgScratch, 4)
+    this.bgView = new Float32Array(mod.memory.buffer, this.bgScratch, 4)
   }
 
   static create(
@@ -64,7 +69,8 @@ export class OpentuiBuffer {
   }
 
   clear(bg: RGBA) {
-    writeRGBA(this.mod, this.bgScratch, bg)
+    this.refreshColorViews()
+    this.bgView.set(bg)
     this.mod.bufferClear(this.ptr, this.bgScratch)
   }
 
@@ -76,8 +82,9 @@ export class OpentuiBuffer {
   }
 
   setCell(x: number, y: number, char: number, fg: RGBA, bg: RGBA, attributes = 0) {
-    writeRGBA(this.mod, this.fgScratch, fg)
-    writeRGBA(this.mod, this.bgScratch, bg)
+    this.refreshColorViews()
+    this.fgView.set(fg)
+    this.bgView.set(bg)
     this.mod.bufferSetCell(this.ptr, x, y, char, this.fgScratch, this.bgScratch, attributes)
   }
 
@@ -85,7 +92,8 @@ export class OpentuiBuffer {
     const bytes = encoder.encode(text)
     this.ensureTextScratch(bytes.length)
     new Uint8Array(this.mod.memory.buffer, this.textScratchPtr, bytes.length).set(bytes)
-    writeRGBA(this.mod, this.fgScratch, fg)
+    this.refreshColorViews()
+    this.fgView.set(fg)
     this.mod.bufferDrawText(this.ptr, this.textScratchPtr, bytes.length, x, y, this.fgScratch, attributes)
   }
 
@@ -118,14 +126,18 @@ export class OpentuiBuffer {
     }
   }
 
+  private refreshColorViews() {
+    const memory = this.mod.memory.buffer
+    if (this.fgView.buffer === memory) return
+    // Resize, text scratch, or another buffer can grow the shared memory.
+    this.fgView = new Float32Array(memory, this.fgScratch, 4)
+    this.bgView = new Float32Array(memory, this.bgScratch, 4)
+  }
+
   private ensureTextScratch(len: number) {
     if (len <= this.textScratchLen) return
     if (this.textScratchLen) this.mod.opentuiFree(this.textScratchPtr, this.textScratchLen)
     this.textScratchPtr = this.mod.opentuiAlloc(len)
     this.textScratchLen = len
   }
-}
-
-function writeRGBA(mod: OpentuiExports, ptr: number, color: RGBA) {
-  new Float32Array(mod.memory.buffer, ptr, 4).set(color)
 }
