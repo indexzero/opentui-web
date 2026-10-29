@@ -5,8 +5,8 @@
 // navigator.gpu is unavailable, so callers can fall back to the WebGL
 // or 2d painter.
 
-import type { CellGrid } from './cell-grid'
-import type { OpentuiBuffer } from './buffer'
+import type { CellGrid } from './cell-grid.js'
+import type { OpentuiBuffer } from './buffer.js'
 
 const WGSL = /* wgsl */ `
 struct VsOut {

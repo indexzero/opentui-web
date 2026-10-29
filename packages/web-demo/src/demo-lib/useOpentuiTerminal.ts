@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { FitAddon, Terminal, init as initGhostty } from 'ghostty-web'
-import { OpentuiBuffer, encodeBufferAsAnsi, encodeBufferAsAnsiDiff, loadOpentui } from 'opentui-browser'
-import type { OpentuiExports } from 'opentui-browser'
+import { OpentuiBuffer, encodeBufferAsAnsi, encodeBufferAsAnsiDiff, loadOpentui } from '@indexzero/opentui-browser'
+import type { OpentuiExports } from '@indexzero/opentui-browser'
 
 let ghosttyReady: Promise<void> | null = null
 function ensureGhostty() {

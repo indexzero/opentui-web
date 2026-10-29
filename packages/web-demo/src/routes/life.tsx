@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
-import { CanvasPainter, OpentuiBuffer, loadOpentui } from 'opentui-browser'
-import type { RGBA } from 'opentui-browser'
+import { CanvasPainter, OpentuiBuffer, loadOpentui } from '@indexzero/opentui-browser'
+import type { RGBA } from '@indexzero/opentui-browser'
 export const Route = createFileRoute('/life')({ component: Life })
 
 const UPPER_HALF_BLOCK = 0x2580

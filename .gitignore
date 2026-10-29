@@ -14,3 +14,6 @@ packages/opentui/packages/core/src/zig/lib/
 
 # screenshots from local browser checks
 /tmp/web-demo-screens/
+
+# Built browser package
+packages/opentui-browser/dist/

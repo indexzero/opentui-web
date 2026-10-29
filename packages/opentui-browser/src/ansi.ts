@@ -4,8 +4,8 @@
 // emulator. State is carried across rows; trailing \x1b[0m resets at frame
 // end so the row below the canvas doesn't inherit a background color.
 
-import type { OpentuiBuffer } from './buffer'
-import type { OpentuiExports } from './wasm'
+import type { OpentuiBuffer } from './buffer.js'
+import type { OpentuiExports } from './wasm.js'
 
 const decoder = new TextDecoder()
 

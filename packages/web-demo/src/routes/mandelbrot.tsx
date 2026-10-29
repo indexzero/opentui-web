@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { drawMandelbrot } from '../demo-lib/mandelbrot-kernel'
+import { drawMandelbrot } from '@indexzero/opentui-browser/kernels/mandelbrot'
 import { VariantPicker } from '../demo-lib/VariantPicker'
 
 export const Route = createFileRoute('/mandelbrot')({ component: MandelbrotPage })

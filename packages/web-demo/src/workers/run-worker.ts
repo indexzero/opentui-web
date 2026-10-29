@@ -12,8 +12,8 @@ import {
   encodeBufferAsAnsiDiffBytes,
   loadOpentui,
   snapshotBufferTransferable,
-} from 'opentui-browser'
-import type { OpentuiExports } from 'opentui-browser'
+} from '@indexzero/opentui-browser'
+import type { OpentuiExports } from '@indexzero/opentui-browser'
 
 export type WorkerKernel = (buf: OpentuiBuffer, t: number, frame: number, opentui: OpentuiExports) => void
 export type WorkerInputHandler = (data: string) => void

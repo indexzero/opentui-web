@@ -3,7 +3,7 @@
 // Allocates linear-memory scratch slots up front and reuses them across calls so
 // hot operations (clear / setCell / drawText) don't churn the wasm allocator.
 
-import type { OpentuiExports } from './wasm'
+import type { OpentuiExports } from './wasm.js'
 
 const RGBA_BYTES = 16
 

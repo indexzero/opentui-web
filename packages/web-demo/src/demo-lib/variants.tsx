@@ -21,8 +21,8 @@ import {
   gridFromMessage,
   gridToText,
   loadOpentui,
-} from 'opentui-browser'
-import type { CellGrid, OpentuiExports } from 'opentui-browser'
+} from '@indexzero/opentui-browser'
+import type { CellGrid, OpentuiExports } from '@indexzero/opentui-browser'
 
 // Copy the buffer's visible text to the clipboard. Triggered by Cmd/Ctrl+C
 // in the canvas variants; the terminal-emulator variants get this for free

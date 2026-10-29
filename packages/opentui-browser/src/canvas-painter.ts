@@ -15,9 +15,9 @@
 // (plasma, particles, etc). For terminal-emulator-shaped apps, keep
 // ghostty-web.
 
-import type { OpentuiBuffer } from './buffer'
-import { decodeBlockElement, type BlockElementMask, type UnitRect } from './block-elements'
-import type { CellGrid } from './cell-grid'
+import type { OpentuiBuffer } from './buffer.js'
+import { decodeBlockElement, type BlockElementMask, type UnitRect } from './block-elements.js'
+import type { CellGrid } from './cell-grid.js'
 
 const ATTR_BOLD = 1 << 0
 const ATTR_ITALIC = 1 << 2

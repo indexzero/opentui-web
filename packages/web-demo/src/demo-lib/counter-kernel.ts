@@ -1,5 +1,5 @@
-import { hsv } from 'opentui-browser'
-import type { OpentuiBuffer, RGBA } from 'opentui-browser'
+import { hsv } from '@indexzero/opentui-browser'
+import type { OpentuiBuffer, RGBA } from '@indexzero/opentui-browser'
 
 const BG: RGBA = [0.04, 0.04, 0.07, 1]
 
