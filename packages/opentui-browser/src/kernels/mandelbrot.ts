@@ -1,5 +1,5 @@
-import type { OpentuiBuffer, RGBA } from 'opentui-browser'
-import { hsv } from 'opentui-browser'
+import type { OpentuiBuffer, RGBA } from '../buffer.js'
+import { hsv } from '../draw-helpers.js'
 
 export const UPPER_HALF_BLOCK = 0x2580
 const MAX_ITER = 96

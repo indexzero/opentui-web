@@ -1,4 +1,4 @@
-import type { OpentuiBuffer, RGBA } from 'opentui-browser'
+import type { OpentuiBuffer, RGBA } from '../buffer.js'
 
 const GLYPH_LO = 0xff66
 const GLYPH_HI = 0xff9d

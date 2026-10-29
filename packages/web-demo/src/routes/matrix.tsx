@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useMemo } from 'react'
-import { createMatrixDraw } from '../demo-lib/matrix-kernel'
+import { createMatrixDraw } from '@indexzero/opentui-browser/kernels/matrix'
 import { VariantPicker } from '../demo-lib/VariantPicker'
 
 export const Route = createFileRoute('/matrix')({ component: MatrixPage })

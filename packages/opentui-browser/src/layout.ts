@@ -16,8 +16,8 @@
 // loadYoga(), and the enum exports are still synchronous.
 import { Align, Direction, Edge, FlexDirection, Gutter, Justify, loadYoga } from 'yoga-layout/load'
 import type { Node as YogaNode } from 'yoga-layout'
-import { drawBorder, drawString, fillRect } from './draw-helpers'
-import type { OpentuiBuffer, RGBA } from './buffer'
+import { drawBorder, drawString, fillRect } from './draw-helpers.js'
+import type { OpentuiBuffer, RGBA } from './buffer.js'
 
 type YogaModule = Awaited<ReturnType<typeof loadYoga>>
 

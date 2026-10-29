@@ -1,5 +1,5 @@
-import type { OpentuiBuffer, RGBA } from 'opentui-browser'
-import { drawBar, drawBorder, drawSparkline, drawString, fillRect, hsv } from 'opentui-browser'
+import type { OpentuiBuffer, RGBA } from '@indexzero/opentui-browser'
+import { drawBar, drawBorder, drawSparkline, drawString, fillRect, hsv } from '@indexzero/opentui-browser'
 
 const BG: RGBA = [0.04, 0.04, 0.08, 1]
 const PANEL_BG: RGBA = [0.06, 0.07, 0.11, 1]

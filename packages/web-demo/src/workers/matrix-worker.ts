@@ -1,4 +1,4 @@
-import { createMatrixDraw } from '../demo-lib/matrix-kernel'
+import { createMatrixDraw } from '@indexzero/opentui-browser/kernels/matrix'
 import { runWorker } from './run-worker'
 
 const draw = createMatrixDraw()

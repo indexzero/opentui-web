@@ -3,7 +3,7 @@
 // Owns the in/out scratch slots in linear memory so insertText / getText
 // don't churn the wasm allocator on every keystroke.
 
-import type { OpentuiExports } from './wasm'
+import type { OpentuiExports } from './wasm.js'
 
 const encoder = new TextEncoder()
 const decoder = new TextDecoder()

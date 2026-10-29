@@ -1,28 +1,46 @@
 {
-  "name": "opentui-browser",
+  "name": "@indexzero/opentui-browser",
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "main": "./src/index.ts",
-  "module": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
+    "build": "node scripts/build.mjs",
+    "prepack": "pnpm run build",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json"
   },
   "exports": {
     ".": {
-      "types": "./src/index.ts",
-      "import": "./src/index.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
     "./layout": {
-      "types": "./src/layout.ts",
-      "import": "./src/layout.ts"
+      "types": "./dist/layout.d.ts",
+      "import": "./dist/layout.js"
     },
-    "./opentui.wasm": "./src/opentui.wasm"
+    "./opentui.wasm": "./dist/opentui.wasm",
+    "./kernels/matrix": {
+      "types": "./dist/kernels/matrix.d.ts",
+      "import": "./dist/kernels/matrix.js"
+    },
+    "./kernels/fire": {
+      "types": "./dist/kernels/fire.d.ts",
+      "import": "./dist/kernels/fire.js"
+    },
+    "./kernels/plasma": {
+      "types": "./dist/kernels/plasma.d.ts",
+      "import": "./dist/kernels/plasma.js"
+    },
+    "./kernels/mandelbrot": {
+      "types": "./dist/kernels/mandelbrot.d.ts",
+      "import": "./dist/kernels/mandelbrot.js"
+    }
   },
   "files": [
-    "src"
+    "dist"
   ],
   "dependencies": {
     "yoga-layout": "3.2.1"

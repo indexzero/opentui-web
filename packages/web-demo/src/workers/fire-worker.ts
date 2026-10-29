@@ -1,4 +1,4 @@
-import { createFireDraw } from '../demo-lib/fire-kernel'
+import { createFireDraw } from '@indexzero/opentui-browser/kernels/fire'
 import { runWorker } from './run-worker'
 
 const draw = createFireDraw()

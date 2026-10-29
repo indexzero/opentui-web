@@ -6,8 +6,8 @@
 // per-cell scaling on the GPU, identical visual output for the glyphs in the
 // atlas. Unknown codepoints fall back to a space (bg-only cell).
 
-import type { CellGrid } from './cell-grid'
-import type { OpentuiBuffer } from './buffer'
+import type { CellGrid } from './cell-grid.js'
+import type { OpentuiBuffer } from './buffer.js'
 
 const ATTR_BOLD = 1 << 0
 const ATTR_ITALIC = 1 << 2

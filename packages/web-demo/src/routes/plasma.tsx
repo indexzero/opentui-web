@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { drawPlasma } from '../demo-lib/plasma-kernel'
+import { drawPlasma } from '@indexzero/opentui-browser/kernels/plasma'
 import { VariantPicker } from '../demo-lib/VariantPicker'
 
 export const Route = createFileRoute('/plasma')({ component: PlasmaPage })

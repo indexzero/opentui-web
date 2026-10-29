@@ -4,10 +4,10 @@ import {
   drawString,
   fillRect,
   hsv,
-} from 'opentui-browser'
-import { box, custom, layoutAndDraw, text } from 'opentui-browser/layout'
-import type { OpentuiBuffer, OpentuiExports, RGBA } from 'opentui-browser'
-import type { Rect, SceneNode } from 'opentui-browser/layout'
+} from '@indexzero/opentui-browser'
+import { box, custom, layoutAndDraw, text } from '@indexzero/opentui-browser/layout'
+import type { OpentuiBuffer, OpentuiExports, RGBA } from '@indexzero/opentui-browser'
+import type { Rect, SceneNode } from '@indexzero/opentui-browser/layout'
 import { applyKey } from './editor-kernel'
 
 const BG: RGBA = [0.04, 0.04, 0.08, 1]

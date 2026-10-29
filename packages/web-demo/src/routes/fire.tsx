@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useMemo } from 'react'
-import { createFireDraw } from '../demo-lib/fire-kernel'
+import { createFireDraw } from '@indexzero/opentui-browser/kernels/fire'
 import { VariantPicker } from '../demo-lib/VariantPicker'
 
 export const Route = createFileRoute('/fire')({ component: FirePage })

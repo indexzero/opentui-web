@@ -5,7 +5,7 @@
 // just typed-array views so they can be passed between main thread, workers,
 // and painters without copying when allocated outside wasm memory.
 
-import type { OpentuiBuffer } from './buffer'
+import type { OpentuiBuffer } from './buffer.js'
 
 export interface CellGrid {
   width: number
