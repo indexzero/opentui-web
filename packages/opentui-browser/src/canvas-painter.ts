@@ -231,8 +231,12 @@ export class CanvasPainter {
     const scaleX = this.cssWidth > 0 ? this.canvas.width / this.cssWidth : 1
     const scaleY = this.cssHeight > 0 ? this.canvas.height / this.cssHeight : 1
 
-    let lastBg = ''
-    let lastFg = ''
+    // Compare the existing quantized channels before allocating CSS strings.
+    // Keep alpha as a number (not RGBA8), and compare channels separately so
+    // out-of-range values retain the painter's existing CSS clamping behavior.
+    // NaN is an invalid RGB sentinel: RGB quantization always produces ints.
+    let lastBgR = NaN, lastBgG = 0, lastBgB = 0, lastBgA = 0
+    let lastFgR = NaN, lastFgG = 0, lastFgB = 0, lastFgA = 0
     let lastFontStyle = ''
     const baseFont = `${this.fontSize}px ${this.fontFamily}`
 
@@ -277,7 +281,7 @@ export class CanvasPainter {
         const br = (bg[fi]! * 255) | 0
         const bgg = (bg[fi + 1]! * 255) | 0
         const bb = (bg[fi + 2]! * 255) | 0
-        const bgKey = ba >= 1 ? `rgb(${br},${bgg},${bb})` : `rgba(${br},${bgg},${bb},${ba})`
+        const bgAlpha = ba >= 1 ? 1 : ba
         // washe local fix (#178): a FLUSH_BOTTOM cell on the last row anchors at
         // its natural cellH against the BOTTOM edge (py+rem .. cssHeight) instead
         // of stretching the whole cell up by the remainder — the wc-bar stays one
@@ -304,9 +308,13 @@ export class CanvasPainter {
         const end = x === width - 1 ? Math.max((x + 1) * cellW, this.cssWidth) : (x + 1) * cellW
         const right = Math.round(end * scaleX) / scaleX
         if (right <= left || fillBottom <= fillY) continue
-        if (bgKey !== lastBg) {
-          ctx.fillStyle = bgKey
-          lastBg = bgKey
+        if (br !== lastBgR || bgg !== lastBgG || bb !== lastBgB
+          || !sameAlpha(bgAlpha, lastBgA)) {
+          ctx.fillStyle = bgAlpha >= 1 ? `rgb(${br},${bgg},${bb})` : `rgba(${br},${bgg},${bb},${bgAlpha})`
+          lastBgR = br
+          lastBgG = bgg
+          lastBgB = bb
+          lastBgA = bgAlpha
         }
         ctx.fillRect(left, fillY, right - left, fillBottom - fillY)
       }
@@ -339,8 +347,7 @@ export class CanvasPainter {
         // The 2D context's bg is opaque, so an rgba glyph composites over
         // the already-drawn background — a true per-cell opacity fade.
         const fa = fg[fi + 3]!
-        const fgKey =
-          fa >= 1 ? `rgb(${fr},${fgg},${fb})` : `rgba(${fr},${fgg},${fb},${fa})`
+        const fgAlpha = fa >= 1 ? 1 : fa
         const block = decodeBlockElement(ch)
         // Per-cell vertical alignment. VALIGN rides attr bits 4-5; 0 falls
         // back to the painter default. The top path retains its original
@@ -395,12 +402,21 @@ export class CanvasPainter {
           )
           // The procedural helper owns fillStyle. Invalidate the text cache so
           // the next ordinary glyph cannot inherit its last geometric colour.
-          lastFg = ''
-        } else if (ch !== 0x20) {
-          if (fgKey !== lastFg) {
-            ctx.fillStyle = fgKey
-            lastFg = fgKey
+          lastFgR = NaN
+        }
+        // A decorated block needs its original foreground again after the
+        // procedural helper; an ordinary glyph or decorated space needs it too.
+        if (block === null || (ai & (ATTR_UNDERLINE | ATTR_STRIKETHROUGH))) {
+          if (fr !== lastFgR || fgg !== lastFgG || fb !== lastFgB
+            || !sameAlpha(fgAlpha, lastFgA)) {
+            ctx.fillStyle = fgAlpha >= 1 ? `rgb(${fr},${fgg},${fb})` : `rgba(${fr},${fgg},${fb},${fgAlpha})`
+            lastFgR = fr
+            lastFgG = fgg
+            lastFgB = fb
+            lastFgA = fgAlpha
           }
+        }
+        if (block === null && ch !== 0x20) {
           const wantFont = fontFor(ai, baseFont, this.fontSize, this.fontFamily)
           if (wantFont !== lastFontStyle) {
             ctx.font = wantFont
@@ -409,20 +425,12 @@ export class CanvasPainter {
           ctx.fillText(stringForCp(ch), x * cellW, pyc + voff)
         }
         if (ai & ATTR_UNDERLINE) {
-          if (fgKey !== lastFg) {
-            ctx.fillStyle = fgKey
-            lastFg = fgKey
-          }
           // Follow the measured baseline and the same alignment as the glyph.
           // Clamp after alignment, including a stretched final cell.
           const uy = Math.min(pyc + (aligned ? vaH : cellH) - 1, pyc + voff + this.underlineOffset)
           ctx.fillRect(x * cellW, uy, cellW, 1)
         }
         if (ai & ATTR_STRIKETHROUGH) {
-          if (fgKey !== lastFg) {
-            ctx.fillStyle = fgKey
-            lastFg = fgKey
-          }
           // The strike follows the measured x-height center and glyph alignment.
           const sy = Math.min(pyc + (aligned ? vaH : cellH) - 1, pyc + voff + this.strikeOffset)
           ctx.fillRect(x * cellW, sy, cellW, 1)
@@ -565,6 +573,12 @@ function fillBlockRects(
     const bottom = Math.round((y + rectangle.y1 * height) * scaleY) / scaleY
     if (right > left && bottom > top) ctx.fillRect(left, top, right - left, bottom - top)
   }
+}
+
+// CSS stringification treats both signed zeros alike and repeats NaN as the
+// same invalid CSS string. Preserve that equality even for malformed grids.
+function sameAlpha(a: number, b: number): boolean {
+  return a === b || Object.is(a, b)
 }
 
 function clampAlpha(alpha: number): number {

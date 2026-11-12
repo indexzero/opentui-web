@@ -12,7 +12,15 @@ interface FillOperation {
 }
 
 class RecordingContext {
-  fillStyle: string | CanvasGradient | CanvasPattern = '#000'
+  private style: string | CanvasGradient | CanvasPattern = '#000'
+  readonly fillStyles: string[] = []
+  readonly textStyles: string[] = []
+
+  get fillStyle(): string | CanvasGradient | CanvasPattern { return this.style }
+  set fillStyle(value: string | CanvasGradient | CanvasPattern) {
+    this.style = value
+    this.fillStyles.push(String(value))
+  }
   font = ''
   textBaseline: CanvasTextBaseline = 'alphabetic'
   readonly fills: FillOperation[] = []
@@ -35,6 +43,7 @@ class RecordingContext {
   }
 
   fillText(text: string, x: number, y: number): void {
+    this.textStyles.push(String(this.fillStyle))
     this.texts.push({ text, x, y })
   }
 }
@@ -250,5 +259,91 @@ describe('CanvasPainter background runs', () => {
     cells.attrs[3] = 0x88
     painter.paintOver(cells)
     expect(events).toEqual(['rect', 'rect', 'text', 'text', 'text', 'rect', 'rect'])
+  })
+})
+
+
+describe('CanvasPainter numeric color state', () => {
+  it('reuses quantized RGB and opaque alpha without changing source colors', () => {
+    const { context, painter } = harness(4)
+    const cells = grid([0x41, 0x42, 0x43, 0x44], [0.5, 0.25, 0.75, 1], [0, 0, 0, 0])
+    cells.fg.set([0.5001, 0.2501, 0.7501, 2], 4)
+    cells.fg.set([0.5002, 0.2502, 0.7502, Infinity], 8)
+    const before = cells.fg.slice()
+    painter.paintOver(cells)
+    expect(context.fillStyles).toEqual(['rgb(127,63,191)'])
+    expect(context.textStyles).toEqual(Array(4).fill('rgb(127,63,191)'))
+    expect(cells.fg).toEqual(before)
+  })
+
+  it('keeps alpha precision, signed-zero equality, and invalid-alpha string equality', () => {
+    const alphas = [0.50001, 0.50001, 0.50002, 0, -0, -0.25, NaN, NaN, 1, 2]
+    const { context, painter } = harness(alphas.length)
+    const cells = grid(Array(alphas.length).fill(0x41), [1, 0, 0, 1], [0, 0, 0, 0])
+    for (let i = 0; i < alphas.length; i++) cells.fg[i * 4 + 3] = alphas[i]!
+    const expected = alphas.map((_, i) => {
+      const alpha = cells.fg[i * 4 + 3]!
+      return alpha >= 1 ? 'rgb(255,0,0)' : `rgba(255,0,0,${alpha})`
+    })
+    painter.paintOver(cells)
+    expect(context.textStyles).toEqual(expected)
+    expect(context.fillStyles).toEqual(expected.filter((style, i) => style !== expected[i - 1]))
+    expect(context.fillStyles[0]).not.toBe('rgba(255,0,0,0.5)')
+  })
+
+  it('does not alias out-of-range channels to an eight-bit packed RGB key', () => {
+    const { context, painter } = harness(3)
+    const cells = grid([0x41, 0x42, 0x43], [1, 0, 0, 1], [0, 0, 0, 0])
+    cells.fg.set([0, 1 / 255, 0, 1], 0)
+    cells.fg.set([0, 0, 256 / 255, 1], 4)
+    cells.fg.set([0, 0, -1 / 255, 1], 8)
+    painter.paintOver(cells)
+    expect(context.textStyles).toEqual(['rgb(0,1,0)', 'rgb(0,0,256)', 'rgb(0,0,-1)'])
+  })
+
+  it('compares translucent backgrounds after quantization without merging their fills', () => {
+    const { context, painter } = harness(5)
+    const cells = grid(Array(5).fill(0x20), [1, 0, 0, 1], [0.5, 0, 0, 0.50001])
+    cells.bg[4] = 0.5001
+    cells.bg[11] = 0 // skip does not change state
+    cells.bg[19] = 0.50002
+    painter.paintOver(cells)
+    const a = cells.bg[3]!, b = cells.bg[19]!
+    expect(context.fillStyles).toEqual([`rgba(127,0,0,${a})`, `rgba(127,0,0,${b})`])
+    expect(context.fills.map(fill => fill.x)).toEqual([0, 10, 30, 40])
+  })
+
+  it('starts foreground state independently of the final background state', () => {
+    const { context, painter } = harness(2)
+    painter.paintOver(grid([0x41, 0x42], [1, 0, 0, 1], [1, 0, 0, 1]))
+    expect(context.fillStyles).toEqual(['rgb(255,0,0)', 'rgb(255,0,0)'])
+    expect(context.textStyles).toEqual(['rgb(255,0,0)', 'rgb(255,0,0)'])
+  })
+
+  it.each([0, 0x88])('restores text and decoration color after a shade block with attrs %s', attrs => {
+    const { context, painter } = harness(3)
+    const cells = grid([0x41, 0x2591, 0x42], [1, 0, 0, 1], [0, 0, 0, 0])
+    cells.attrs[1] = attrs
+    painter.paintOver(cells)
+    expect(context.fillStyles).toEqual(['rgb(255,0,0)', 'rgba(255,0,0,0.25)', 'rgb(255,0,0)'])
+    expect(context.textStyles).toEqual(['rgb(255,0,0)', 'rgb(255,0,0)'])
+    expect(context.fills.map(fill => fill.style)).toEqual(attrs
+      ? ['rgba(255,0,0,0.25)', 'rgb(255,0,0)', 'rgb(255,0,0)']
+      : ['rgba(255,0,0,0.25)'])
+  })
+
+  it('restores foreground for decorated spaces and resets state on every paint', () => {
+    const { context, painter } = harness(3)
+    const cells = grid([0x41, 0x20, 0x42], [1, 0, 0, 0.5], [0, 0, 0, 0])
+    cells.attrs[1] = 0x88
+    cells.fg.set([0, 1, 0, 0.5], 4)
+    painter.paintOver(cells)
+    context.fillStyle = '#123456' // another layer may draw between frames
+    painter.paintOver(cells)
+    expect(context.fillStyles).toEqual([
+      'rgba(255,0,0,0.5)', 'rgba(0,255,0,0.5)', 'rgba(255,0,0,0.5)', '#123456',
+      'rgba(255,0,0,0.5)', 'rgba(0,255,0,0.5)', 'rgba(255,0,0,0.5)',
+    ])
+    expect(context.fills.map(fill => fill.style)).toEqual(Array(4).fill('rgba(0,255,0,0.5)'))
   })
 })
